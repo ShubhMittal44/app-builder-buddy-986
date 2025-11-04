@@ -4,12 +4,13 @@ import { ArrowLeft } from "lucide-react";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { OnlineUsers } from "@/components/OnlineUsers";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const Analytics = () => {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-card shadow-sm">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm hidden md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/">
@@ -19,13 +20,20 @@ const Analytics = () => {
             </Link>
             <nav className="flex gap-3">
               <Button variant="ghost" asChild>
-                <Link to="/">Orders</Link>
+                <Link to="/orders">Orders</Link>
               </Button>
               <Button variant="ghost" asChild>
                 <Link to="/analytics">Analytics</Link>
               </Button>
             </nav>
           </div>
+        </div>
+      </header>
+      
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm md:hidden">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-primary text-center">Analytics</h1>
         </div>
       </header>
 
@@ -57,6 +65,8 @@ const Analytics = () => {
           </div>
         </div>
       </main>
+      
+      <MobileBottomNav />
     </div>
   );
 };

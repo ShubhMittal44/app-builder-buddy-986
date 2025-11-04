@@ -104,6 +104,7 @@ export function FileUpload({
           onChange={handleChange}
           disabled={disabled || uploading}
           className="hidden"
+          {...(accept === "image/*" && { capture: "environment" })}
         />
 
         <div className="flex flex-col items-center justify-center gap-3 text-center">

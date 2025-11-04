@@ -23,6 +23,7 @@ import { useOrderMutations } from "@/hooks/useOrders";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import { useFileUpload, UploadedFile } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const NewOrder = () => {
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState("Lucknow");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [estimatedDuration, setEstimatedDuration] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
@@ -95,9 +96,9 @@ const NewOrder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-card shadow-sm">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm hidden md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/">
@@ -107,16 +108,20 @@ const NewOrder = () => {
             </Link>
             <nav className="flex gap-3">
               <Button variant="ghost" asChild>
-                <Link to="/">Orders</Link>
+                <Link to="/orders">Orders</Link>
               </Button>
-              <Button asChild>
-                <Link to="/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Order
-                </Link>
+              <Button variant="ghost" asChild>
+                <Link to="/analytics">Analytics</Link>
               </Button>
             </nav>
           </div>
+        </div>
+      </header>
+      
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm md:hidden">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-primary text-center">Add Order</h1>
         </div>
       </header>
 
@@ -303,7 +308,7 @@ const NewOrder = () => {
 
               {/* File Upload */}
               <div className="space-y-2">
-                <Label>Attach Files (Optional)</Label>
+                <Label>Chalan/Glass_Size</Label>
                 <p className="text-sm text-muted-foreground">
                   Upload size charts, design specs, or other documents
                 </p>
@@ -314,8 +319,8 @@ const NewOrder = () => {
                   maxSize={10}
                   uploading={uploading}
                   progress={progress}
-                  accept="application/pdf,image/*,.doc,.docx"
-                />
+                  accept="image/*"
+                 />
               </div>
               </CardContent>
             </Card>
@@ -345,6 +350,7 @@ const NewOrder = () => {
         </div>
       </main>
       
+      <MobileBottomNav />
       <OfflineIndicator />
     </div>
   );

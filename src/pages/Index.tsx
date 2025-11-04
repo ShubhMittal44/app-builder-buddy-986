@@ -5,14 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { StageBadge } from "@/components/ui/stage-badge";
 import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, BarChart3 } from "lucide-react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const Index = () => {
   const { isAdmin, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      {/* Desktop Header */}
+      <header className="border-b bg-card hidden md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">RGH – Order Management</h1>
@@ -45,6 +46,13 @@ const Index = () => {
           </div>
         </div>
       </header>
+      
+      {/* Mobile Header */}
+      <header className="border-b bg-card md:hidden sticky top-0 z-40">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-primary text-center">RGH Order Management</h1>
+        </div>
+      </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -61,13 +69,13 @@ const Index = () => {
           {/* Workflow Stages */}
           <Card>
             <CardHeader>
-              <CardTitle>Order Workflow Stages</CardTitle>
+              <CardTitle className="text-lg md:text-xl">Order Workflow Stages</CardTitle>
               <CardDescription>
                 Track orders through six distinct stages with clear visual indicators
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
                   <Package className="w-8 h-8 text-stage-intake" />
                   <div>
@@ -120,7 +128,7 @@ const Index = () => {
           </Card>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -185,6 +193,7 @@ const Index = () => {
         </div>
       </main>
       
+      <MobileBottomNav />
       <PWAInstallPrompt />
     </div>
   );

@@ -27,6 +27,7 @@ import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { useOrders, OrderStage } from "@/hooks/useOrders";
 import { useNotifications } from "@/hooks/useNotifications";
 import { exportToCSV } from "@/utils/exportOrders";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
 type SortDirection = "asc" | "desc";
@@ -163,9 +164,9 @@ const Orders = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-card shadow-sm">
+    <div className="min-h-screen bg-background pb-20 md:pb-0">
+      {/* Desktop Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm hidden md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link to="/">
@@ -185,6 +186,13 @@ const Orders = () => {
               </Button>
             </nav>
           </div>
+        </div>
+      </header>
+      
+      {/* Mobile Header */}
+      <header className="sticky top-0 z-10 border-b bg-card shadow-sm md:hidden">
+        <div className="px-4 py-3">
+          <h1 className="text-lg font-bold text-primary text-center">Orders</h1>
         </div>
       </header>
 
@@ -387,6 +395,7 @@ const Orders = () => {
         </div>
       </main>
       
+      <MobileBottomNav />
       <OfflineIndicator />
     </div>
   );
