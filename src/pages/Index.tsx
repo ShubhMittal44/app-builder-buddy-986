@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -12,8 +13,12 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">RGH – Order Management</h1>
             <nav className="flex gap-4">
-              <Button variant="ghost">Orders</Button>
-              <Button>Add Order</Button>
+              <Button variant="ghost" asChild>
+                <Link to="/orders">Orders</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/new">Add Order</Link>
+              </Button>
             </nav>
           </div>
         </div>
@@ -145,9 +150,11 @@ const Index = () => {
 
           {/* CTA */}
           <div className="text-center space-y-4">
-            <Button size="lg" className="gap-2">
-              <Package className="w-5 h-5" />
-              Create Your First Order
+            <Button size="lg" className="gap-2" asChild>
+              <Link to="/new">
+                <Package className="w-5 h-5" />
+                Create Your First Order
+              </Link>
             </Button>
             <p className="text-sm text-muted-foreground">
               Start managing your glass installation orders efficiently
