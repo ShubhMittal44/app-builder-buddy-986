@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,12 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const Index = () => {
   const { isAdmin, signOut } = useAuth();
+  const location = useLocation();
+  
+  // Hide Orders link on desktop when on orders pages
+  const isOnOrdersPage = location.pathname === '/orders' || 
+                         location.pathname.startsWith('/orders/') || 
+                         location.pathname === '/new';
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -18,15 +24,19 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">RGH – Order Management</h1>
             <nav className="flex gap-4">
-              <Button variant="ghost" asChild>
-                <Link to="/orders">Orders</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/analytics">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Analytics
-                </Link>
-              </Button>
+              {!isOnOrdersPage && (
+                <Button variant="ghost" asChild>
+                  <Link to="/orders">Orders</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/analytics">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Analytics
+                  </Link>
+                </Button>
+              )}
               <Button asChild>
                 <Link to="/new">Add Order</Link>
               </Button>

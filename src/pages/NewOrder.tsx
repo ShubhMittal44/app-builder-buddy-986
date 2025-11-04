@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Plus, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -27,9 +28,13 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const NewOrder = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAdmin } = useAuth();
   const { createOrder } = useOrderMutations();
   const { uploadFiles, uploading, progress } = useFileUpload();
   const [customerName, setCustomerName] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Lucknow");
@@ -43,6 +48,36 @@ const NewOrder = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const balance = totalAmount - advanceAmount + freightAmount;
+  const isOnOrdersPage = location.pathname === '/orders' || 
+                         location.pathname.startsWith('/orders/') || 
+                         location.pathname === '/new';
+
+  // Fetch customer suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!customerName || customerName.length < 2) {
+        setSuggestions([]);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('orders')
+        .select('customer_name, phone, address, city')
+        .ilike('customer_name', `%${customerName}%`)
+        .limit(10);
+
+      if (data) {
+        // Get unique customers
+        const uniqueCustomers = Array.from(
+          new Map(data.map(item => [item.customer_name, item])).values()
+        );
+        setSuggestions(uniqueCustomers);
+      }
+    };
+
+    const timeoutId = setTimeout(fetchSuggestions, 300);
+    return () => clearTimeout(timeoutId);
+  }, [customerName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,12 +142,16 @@ const NewOrder = () => {
               </h1>
             </Link>
             <nav className="flex gap-3">
-              <Button variant="ghost" asChild>
-                <Link to="/orders">Orders</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/analytics">Analytics</Link>
-              </Button>
+              {!isOnOrdersPage && (
+                <Button variant="ghost" asChild>
+                  <Link to="/orders">Orders</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/analytics">Analytics</Link>
+                </Button>
+              )}
             </nav>
           </div>
         </div>
@@ -159,17 +198,46 @@ const NewOrder = () => {
               <CardContent className="space-y-6">
                 {/* Customer Information */}
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
+                  <div className="space-y-2 relative">
                     <Label htmlFor="customerName">
                       Customer Name <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="customerName"
                       value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
+                      onChange={(e) => {
+                        setCustomerName(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                       placeholder="Enter customer name"
                       required
+                      autoComplete="off"
                     />
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-card border rounded-md shadow-lg max-h-60 overflow-auto">
+                        {suggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full px-4 py-2 text-left hover:bg-accent/50 transition-colors border-b last:border-b-0"
+                            onClick={() => {
+                              setCustomerName(suggestion.customer_name);
+                              setPhone(suggestion.phone || "");
+                              setAddress(suggestion.address || "");
+                              setCity(suggestion.city || "Lucknow");
+                              setShowSuggestions(false);
+                            }}
+                          >
+                            <div className="font-medium">{suggestion.customer_name}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {suggestion.phone} • {suggestion.address} • {suggestion.city}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2">

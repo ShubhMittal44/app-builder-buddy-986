@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Plus, FileDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,8 @@ type SortDirection = "asc" | "desc";
 
 const Orders = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAdmin } = useAuth();
   const { orders, loading, error } = useOrders();
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +44,10 @@ const Orders = () => {
   const [sortField, setSortField] = useState<SortField>("orderDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
+  
+  const isOnOrdersPage = location.pathname === '/orders' || 
+                         location.pathname.startsWith('/orders/') || 
+                         location.pathname === '/new';
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -175,9 +182,16 @@ const Orders = () => {
               </h1>
             </Link>
             <nav className="flex gap-3">
-              <Button variant="ghost" asChild>
-                <Link to="/">Orders</Link>
-              </Button>
+              {!isOnOrdersPage && (
+                <Button variant="ghost" asChild>
+                  <Link to="/orders">Orders</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/analytics">Analytics</Link>
+                </Button>
+              )}
               <Button asChild>
                 <Link to="/new">
                   <Plus className="w-4 h-4 mr-2" />

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,8 @@ import { cn } from "@/lib/utils";
 const OrderWorkspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAdmin } = useAuth();
   const { order, loading, error } = useOrder(id);
   const { updateOrder, updateStage } = useOrderMutations();
   const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
@@ -64,6 +67,10 @@ const OrderWorkspace = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const isOnOrdersPage = location.pathname === '/orders' || 
+                         location.pathname.startsWith('/orders/') || 
+                         location.pathname === '/new';
 
   // Populate form fields when order loads
   useEffect(() => {
@@ -120,7 +127,7 @@ const OrderWorkspace = () => {
       case "processing":
         return processingSite !== "";
       case "dispatch":
-        return uploadedFiles.length > 0;
+        return true; // Files are optional
       case "fitting":
         return true;
       default:
@@ -169,6 +176,13 @@ const OrderWorkspace = () => {
     }
 
     try {
+      // Save site selection if on assign_site or processing stage
+      if (order.stage === "assign_site" && assignSite) {
+        await updateOrder(order.id, { assign_site: assignSite });
+      } else if (order.stage === "processing" && processingSite) {
+        await updateOrder(order.id, { processing_site: processingSite });
+      }
+
       const nextStage = getNextStage();
       await updateStage(order.id, order, nextStage);
       
@@ -289,9 +303,16 @@ const OrderWorkspace = () => {
               </h1>
             </Link>
             <nav className="flex gap-3">
-              <Button variant="ghost" asChild>
-                <Link to="/">Orders</Link>
-              </Button>
+              {!isOnOrdersPage && (
+                <Button variant="ghost" asChild>
+                  <Link to="/orders">Orders</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/analytics">Analytics</Link>
+                </Button>
+              )}
               <Button asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
@@ -377,11 +398,10 @@ const OrderWorkspace = () => {
                         {getNextStageLabel()}
                         <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
-                      {!canMoveToNextStage() && (
+                        {!canMoveToNextStage() && (
                         <p className="text-sm text-destructive">
                           {order.stage === "assign_site" && "Please select assign site"}
-                          {order.stage === "processing" && "Please select processing site"}
-                          {order.stage === "dispatch" && "Please upload files before dispatching"}
+                          {order.stage === "processing" && "Please select processing"}
                         </p>
                       )}
                     </div>
@@ -560,7 +580,7 @@ const OrderWorkspace = () => {
                 order.stage === "fitting" || order.stage === "closed") && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Processing Site</Label>
+                    <Label>Processing</Label>
                     <RadioGroup
                       value={processingSite}
                       onValueChange={(value) => setProcessingSite(value as SiteEnum)}
@@ -596,9 +616,9 @@ const OrderWorkspace = () => {
 
               {/* File Upload */}
               <div className="space-y-2">
-                <Label>Attach Files</Label>
+                <Label>Chalan/Glass_Size</Label>
                 <p className="text-sm text-muted-foreground">
-                  Upload size charts, design specifications, or other documents
+                  Upload size charts, design specifications, or other documents (optional)
                 </p>
                 <FileUpload
                   value={files}
@@ -607,7 +627,7 @@ const OrderWorkspace = () => {
                   maxSize={10}
                   uploading={uploading}
                   progress={progress}
-                  accept="application/pdf,image/*,.doc,.docx"
+                  accept="image/*"
                 />
                 {uploadedFiles.length > 0 && (
                   <div className="mt-4 space-y-2">
@@ -644,11 +664,6 @@ const OrderWorkspace = () => {
                       </div>
                     ))}
                   </div>
-                )}
-                {order.stage === "dispatch" && uploadedFiles.length === 0 && files.length === 0 && (
-                  <p className="text-sm text-destructive mt-2">
-                    ⚠️ Files are required before moving to Dispatch stage
-                  </p>
                 )}
               </div>
             </CardContent>

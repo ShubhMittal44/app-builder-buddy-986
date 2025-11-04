@@ -1,4 +1,5 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
@@ -7,6 +8,18 @@ import { NotificationSettings } from "@/components/NotificationSettings";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const Analytics = () => {
+  const { isAdmin } = useAuth();
+  const location = useLocation();
+  
+  const isOnOrdersPage = location.pathname === '/orders' || 
+                         location.pathname.startsWith('/orders/') || 
+                         location.pathname === '/new';
+
+  // Redirect non-admins
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Desktop Header */}
@@ -19,12 +32,16 @@ const Analytics = () => {
               </h1>
             </Link>
             <nav className="flex gap-3">
-              <Button variant="ghost" asChild>
-                <Link to="/orders">Orders</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                <Link to="/analytics">Analytics</Link>
-              </Button>
+              {!isOnOrdersPage && (
+                <Button variant="ghost" asChild>
+                  <Link to="/orders">Orders</Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/analytics">Analytics</Link>
+                </Button>
+              )}
             </nav>
           </div>
         </div>

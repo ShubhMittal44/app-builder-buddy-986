@@ -5,13 +5,13 @@ import { cn } from "@/lib/utils";
 
 export const MobileBottomNav = () => {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: ClipboardList, label: "Orders", path: "/orders" },
     { icon: Plus, label: "Add Order", path: "/new" },
-    { icon: BarChart3, label: "Analytics", path: "/analytics" },
+    ...(isAdmin ? [{ icon: BarChart3, label: "Analytics", path: "/analytics" }] : []),
   ];
 
   const isActive = (path: string) => {
@@ -28,7 +28,10 @@ export const MobileBottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      <div className="grid grid-cols-5 h-16">
+      <div className={cn(
+        "grid h-16",
+        isAdmin ? "grid-cols-5" : "grid-cols-4"
+      )}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
