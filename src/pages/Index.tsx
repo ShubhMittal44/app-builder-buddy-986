@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageBadge } from "@/components/ui/stage-badge";
-import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon } from "lucide-react";
+import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, BarChart3 } from "lucide-react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 const Index = () => {
@@ -19,6 +19,12 @@ const Index = () => {
             <nav className="flex gap-4">
               <Button variant="ghost" asChild>
                 <Link to="/orders">Orders</Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/analytics">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </Link>
               </Button>
               <Button asChild>
                 <Link to="/new">Add Order</Link>

@@ -51,10 +51,8 @@ export const useOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
 
-  // Real-time subscription
-  useEffect(() => {
+    // Real-time subscription
     const channel = supabase
       .channel('orders-changes')
       .on(
@@ -64,7 +62,8 @@ export const useOrders = () => {
           schema: 'public',
           table: 'orders'
         },
-        () => {
+        (payload) => {
+          console.log('Order change detected:', payload);
           fetchOrders();
         }
       )

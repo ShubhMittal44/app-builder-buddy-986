@@ -20,6 +20,8 @@ import { toast } from "@/hooks/use-toast";
 import { useOrder, useOrderMutations, OrderStage, SiteEnum, TimelineEntry } from "@/hooks/useOrders";
 import { useFileUpload, UploadedFile } from "@/hooks/useFileUpload";
 import { supabase } from "@/integrations/supabase/client";
+import { OnlineUsers } from "@/components/OnlineUsers";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +47,7 @@ const OrderWorkspace = () => {
   const { order, loading, error } = useOrder(id);
   const { updateOrder, updateStage } = useOrderMutations();
   const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
+  const { notifyOrderUpdate } = useNotifications();
 
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -168,6 +171,9 @@ const OrderWorkspace = () => {
     try {
       const nextStage = getNextStage();
       await updateStage(order.id, order, nextStage);
+      
+      // Send notification
+      notifyOrderUpdate(order.order_number, nextStage, order.customer_name);
     } catch (err) {
       console.error("Failed to update stage:", err);
     }
@@ -356,30 +362,39 @@ const OrderWorkspace = () => {
           </Card>
 
           {/* Stepper with Action */}
-          <Card className="sticky top-20 z-10 shadow-lg">
-            <CardContent className="pt-6">
-              <OrderStepper currentStage={order.stage} />
-              {order.stage !== "closed" && (
-                <div className="mt-6 flex flex-col items-center gap-2">
-                  <Button
-                    size="lg"
-                    onClick={handleNextStage}
-                    disabled={!canMoveToNextStage()}
-                  >
-                    {getNextStageLabel()}
-                    <ChevronRight className="w-4 h-4 ml-2" />
-                  </Button>
-                  {!canMoveToNextStage() && (
-                    <p className="text-sm text-destructive">
-                      {order.stage === "assign_site" && "Please select assign site"}
-                      {order.stage === "processing" && "Please select processing site"}
-                      {order.stage === "dispatch" && "Please upload files before dispatching"}
-                    </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <Card className="sticky top-20 z-10 shadow-lg">
+                <CardContent className="pt-6">
+                  <OrderStepper currentStage={order.stage} />
+                  {order.stage !== "closed" && (
+                    <div className="mt-6 flex flex-col items-center gap-2">
+                      <Button
+                        size="lg"
+                        onClick={handleNextStage}
+                        disabled={!canMoveToNextStage()}
+                      >
+                        {getNextStageLabel()}
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Button>
+                      {!canMoveToNextStage() && (
+                        <p className="text-sm text-destructive">
+                          {order.stage === "assign_site" && "Please select assign site"}
+                          {order.stage === "processing" && "Please select processing site"}
+                          {order.stage === "dispatch" && "Please upload files before dispatching"}
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Online Users Sidebar */}
+            <div className="md:col-span-1">
+              <OnlineUsers orderId={order.id} />
+            </div>
+          </div>
 
           {/* Order Details Form */}
           <Card>

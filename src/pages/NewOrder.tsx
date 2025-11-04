@@ -109,6 +109,12 @@ const NewOrder = () => {
               <Button variant="ghost" asChild>
                 <Link to="/">Orders</Link>
               </Button>
+              <Button asChild>
+                <Link to="/new">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Order
+                </Link>
+              </Button>
             </nav>
           </div>
         </div>

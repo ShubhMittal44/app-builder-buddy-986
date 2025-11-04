@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter, Plus, FileDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 import { useOrders, OrderStage } from "@/hooks/useOrders";
+import { useNotifications } from "@/hooks/useNotifications";
+import { exportToCSV } from "@/utils/exportOrders";
 
 type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
 type SortDirection = "asc" | "desc";
@@ -32,6 +34,7 @@ type SortDirection = "asc" | "desc";
 const Orders = () => {
   const navigate = useNavigate();
   const { orders, loading, error } = useOrders();
+  const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
   const [sortField, setSortField] = useState<SortField>("orderDate");
@@ -40,6 +43,21 @@ const Orders = () => {
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Notify on new orders (real-time)
+  useEffect(() => {
+    const previousCount = orders.length;
+    return () => {
+      if (orders.length > previousCount) {
+        const newOrder = orders[0]; // Newest order
+        notifyNewOrder(newOrder.order_number, newOrder.customer_name);
+      }
+    };
+  }, [orders.length]);
+
+  const handleExport = () => {
+    exportToCSV(filteredOrders, `orders-${new Date().toISOString().split('T')[0]}.csv`);
+  };
 
   const filteredOrders = useMemo(() => {
     let filtered = [...orders];
@@ -201,7 +219,7 @@ const Orders = () => {
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" aria-label="Export data">
+                <Button variant="outline" aria-label="Export data" onClick={handleExport}>
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
                 </Button>
