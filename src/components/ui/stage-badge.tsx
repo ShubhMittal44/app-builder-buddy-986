@@ -42,7 +42,7 @@ const stageConfig: Record<OrderStage, { label: string; className: string }> = {
   },
 };
 
-export function StageBadge({ stage, className }: StageBadgeProps) {
+export const StageBadge = React.memo(function StageBadge({ stage, className }: StageBadgeProps) {
   const config = stageConfig[stage];
   
   return (
@@ -50,4 +50,4 @@ export function StageBadge({ stage, className }: StageBadgeProps) {
       {config.label}
     </Badge>
   );
-}
+});

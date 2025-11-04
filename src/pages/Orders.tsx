@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Search, Filter, Plus, FileDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, Filter, Plus, FileDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge, OrderStage } from "@/components/ui/stage-badge";
@@ -22,24 +22,78 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { mockOrders } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+
+type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
+type SortDirection = "asc" | "desc";
 
 const Orders = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [isLoading] = useState(false);
+  const [sortField, setSortField] = useState<SortField>("orderDate");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
+  
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const filteredOrders = mockOrders.filter((order) => {
-    const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredOrders = useMemo(() => {
+    let filtered = mockOrders.filter((order) => {
+      const matchesSearch =
+        order.orderNumber.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        order.customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        order.city?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        order.phone?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
-    const matchesStage =
-      stageFilter === "all" || order.stage === stageFilter;
+      const matchesStage =
+        stageFilter === "all" || order.stage === stageFilter;
 
-    return matchesSearch && matchesStage;
-  });
+      return matchesSearch && matchesStage;
+    });
+
+    // Sort orders
+    filtered.sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle undefined values
+      if (aValue === undefined) aValue = "";
+      if (bValue === undefined) bValue = "";
+
+      if (sortDirection === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  // Keyboard navigation
+  useKeyboardNavigation(
+    () => setSelectedRowIndex((prev) => Math.max(-1, prev - 1)),
+    () => setSelectedRowIndex((prev) => Math.min(filteredOrders.length - 1, prev + 1)),
+    () => {
+      if (selectedRowIndex >= 0 && filteredOrders[selectedRowIndex]) {
+        navigate(`/orders/${filteredOrders[selectedRowIndex].id}`);
+      }
+    },
+    () => setSelectedRowIndex(-1)
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -96,10 +150,11 @@ const Orders = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
+                    aria-label="Search orders"
                   />
                 </div>
                 <Select value={stageFilter} onValueChange={setStageFilter}>
-                  <SelectTrigger className="w-full md:w-48">
+                  <SelectTrigger className="w-full md:w-48" aria-label="Filter by stage">
                     <Filter className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Filter by stage" />
                   </SelectTrigger>
@@ -113,7 +168,7 @@ const Orders = () => {
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline">
+                <Button variant="outline" aria-label="Export data">
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
                 </Button>
@@ -154,26 +209,75 @@ const Orders = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Stage</TableHead>
-                        <TableHead className="font-mono">Order No</TableHead>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>City</TableHead>
-                        <TableHead>Order Date</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="font-mono">
+                          <button
+                            onClick={() => handleSort("orderNumber")}
+                            className="flex items-center gap-1 hover:text-foreground"
+                          >
+                            Order No
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button
+                            onClick={() => handleSort("customerName")}
+                            className="flex items-center gap-1 hover:text-foreground"
+                          >
+                            Customer
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button
+                            onClick={() => handleSort("city")}
+                            className="flex items-center gap-1 hover:text-foreground"
+                          >
+                            City
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button
+                            onClick={() => handleSort("orderDate")}
+                            className="flex items-center gap-1 hover:text-foreground"
+                          >
+                            Order Date
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <button
+                            onClick={() => handleSort("totalAmount")}
+                            className="flex items-center gap-1 ml-auto hover:text-foreground"
+                          >
+                            Total
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </TableHead>
                         <TableHead className="text-right">Advance</TableHead>
                         <TableHead className="text-right">Freight</TableHead>
                         <TableHead className="text-right font-semibold">
-                          Balance
+                          <button
+                            onClick={() => handleSort("balance")}
+                            className="flex items-center gap-1 ml-auto hover:text-foreground"
+                          >
+                            Balance
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
                         </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrders.map((order) => (
+                      {filteredOrders.map((order, index) => (
                         <TableRow
                           key={order.id}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() =>
-                            (window.location.href = `/orders/${order.id}`)
-                          }
+                          className={`cursor-pointer hover:bg-muted/50 ${
+                            selectedRowIndex === index ? "bg-muted" : ""
+                          }`}
+                          onClick={() => navigate(`/orders/${order.id}`)}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`View order ${order.orderNumber}`}
                         >
                           <TableCell>
                             <StageBadge stage={order.stage} />
@@ -226,6 +330,8 @@ const Orders = () => {
           )}
         </div>
       </main>
+      
+      <OfflineIndicator />
     </div>
   );
 };

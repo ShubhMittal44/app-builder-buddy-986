@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { OrderStepper } from "@/components/OrderStepper";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -287,6 +288,8 @@ const NewOrder = () => {
           </form>
         </div>
       </main>
+      
+      <OfflineIndicator />
     </div>
   );
 };

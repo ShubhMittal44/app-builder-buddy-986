@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Orders from "./pages/Orders";
 import NewOrder from "./pages/NewOrder";
 import OrderWorkspace from "./pages/OrderWorkspace";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/orders" element={<Orders />} />
           <Route path="/new" element={<NewOrder />} />
           <Route path="/orders/:id" element={<OrderWorkspace />} />
+          <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

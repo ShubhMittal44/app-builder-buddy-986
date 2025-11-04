@@ -1,3 +1,4 @@
+import * as React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrderStage } from "./ui/stage-badge";
@@ -18,7 +19,7 @@ interface OrderStepperProps {
   className?: string;
 }
 
-export function OrderStepper({ currentStage, className }: OrderStepperProps) {
+export const OrderStepper = React.memo(function OrderStepper({ currentStage, className }: OrderStepperProps) {
   const currentIndex = stageOrder.indexOf(currentStage);
 
   return (
@@ -74,4 +75,4 @@ export function OrderStepper({ currentStage, className }: OrderStepperProps) {
       </div>
     </div>
   );
-}
+});
