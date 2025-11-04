@@ -21,10 +21,13 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useOrderMutations } from "@/hooks/useOrders";
 import { LoadingSpinner } from "@/components/LoadingStates";
+import { useFileUpload, UploadedFile } from "@/hooks/useFileUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 const NewOrder = () => {
   const navigate = useNavigate();
   const { createOrder } = useOrderMutations();
+  const { uploadFiles, uploading, progress } = useFileUpload();
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -55,6 +58,7 @@ const NewOrder = () => {
     setSubmitting(true);
     
     try {
+      // First create the order
       const newOrder = await createOrder({
         customer_name: customerName,
         phone: phone || null,
@@ -66,8 +70,21 @@ const NewOrder = () => {
         advance_amount: advanceAmount || null,
         freight_amount: freightAmount || null,
         notes: notes || null,
-        files: [], // File upload will be implemented in Phase 6
+        files: [],
       });
+
+      // Upload files if any
+      if (files.length > 0) {
+        const uploadedFiles = await uploadFiles(files, newOrder.id);
+        
+        // Update order with file metadata
+        if (uploadedFiles.length > 0) {
+          await supabase
+            .from('orders')
+            .update({ files: uploadedFiles as any })
+            .eq('id', newOrder.id);
+        }
+      }
 
       navigate(`/orders/${newOrder.id}`);
     } catch (error) {
@@ -278,16 +295,22 @@ const NewOrder = () => {
                   />
                 </div>
 
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <Label>Attach Files</Label>
-                  <FileUpload
-                    value={files}
-                    onChange={setFiles}
-                    maxFiles={10}
-                    maxSize={10}
-                  />
-                </div>
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label>Attach Files (Optional)</Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload size charts, design specs, or other documents
+                </p>
+                <FileUpload
+                  value={files}
+                  onChange={setFiles}
+                  maxFiles={10}
+                  maxSize={10}
+                  uploading={uploading}
+                  progress={progress}
+                  accept="application/pdf,image/*,.doc,.docx"
+                />
+              </div>
               </CardContent>
             </Card>
 
@@ -296,13 +319,13 @@ const NewOrder = () => {
               <Button type="button" variant="outline" asChild disabled={submitting}>
                 <Link to="/">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={!customerName.trim() || submitting}>
-                {submitting ? (
+              <Button type="submit" disabled={!customerName.trim() || submitting || uploading}>
+                {submitting || uploading ? (
                   <>
                     <div className="mr-2">
                       <LoadingSpinner size="sm" />
                     </div>
-                    Creating...
+                    {uploading ? 'Uploading files...' : 'Creating...'}
                   </>
                 ) : (
                   <>

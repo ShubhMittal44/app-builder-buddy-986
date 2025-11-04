@@ -2,6 +2,7 @@ import * as React from "react";
 import { Upload, X, FileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { Progress } from "./progress";
 
 export interface FileUploadProps {
   value?: File[];
@@ -10,6 +11,8 @@ export interface FileUploadProps {
   maxSize?: number; // in MB
   accept?: string;
   disabled?: boolean;
+  uploading?: boolean;
+  progress?: number;
   className?: string;
 }
 
@@ -20,6 +23,8 @@ export function FileUpload({
   maxSize = 10,
   accept,
   disabled,
+  uploading = false,
+  progress = 0,
   className,
 }: FileUploadProps) {
   const [dragActive, setDragActive] = React.useState(false);
@@ -40,14 +45,14 @@ export function FileUpload({
     e.stopPropagation();
     setDragActive(false);
 
-    if (disabled) return;
+    if (disabled || uploading) return;
 
     const files = Array.from(e.dataTransfer.files);
     handleFiles(files);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return;
+    if (disabled || uploading) return;
     const files = Array.from(e.target.files || []);
     handleFiles(files);
   };
@@ -67,6 +72,7 @@ export function FileUpload({
   };
 
   const removeFile = (index: number) => {
+    if (uploading) return;
     const newFiles = value.filter((_, i) => i !== index);
     onChange?.(newFiles);
   };
@@ -83,7 +89,7 @@ export function FileUpload({
           dragActive
             ? "border-primary bg-primary/5"
             : "border-border bg-background hover:border-primary/50",
-          disabled && "opacity-50 cursor-not-allowed"
+          (disabled || uploading) && "opacity-50 cursor-not-allowed"
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -96,7 +102,7 @@ export function FileUpload({
           multiple
           accept={accept}
           onChange={handleChange}
-          disabled={disabled}
+          disabled={disabled || uploading}
           className="hidden"
         />
 
@@ -110,8 +116,8 @@ export function FileUpload({
               <button
                 type="button"
                 onClick={openFileDialog}
-                disabled={disabled}
-                className="text-primary hover:underline focus:outline-none"
+                disabled={disabled || uploading}
+                className="text-primary hover:underline focus:outline-none disabled:cursor-not-allowed"
               >
                 browse
               </button>
@@ -120,6 +126,14 @@ export function FileUpload({
               Maximum {maxFiles} files, up to {maxSize}MB each
             </p>
           </div>
+          {uploading && (
+            <div className="w-full max-w-xs mt-2">
+              <Progress value={progress} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                Uploading... {Math.round(progress)}%
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -142,7 +156,7 @@ export function FileUpload({
                 variant="ghost"
                 size="icon"
                 onClick={() => removeFile(index)}
-                disabled={disabled}
+                disabled={disabled || uploading}
                 className="flex-shrink-0"
               >
                 <X className="w-4 h-4" />

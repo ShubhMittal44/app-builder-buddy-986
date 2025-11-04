@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, ChevronRight, FileIcon, Download } from "lucide-react";
+import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import { toast } from "@/hooks/use-toast";
 import { useOrder, useOrderMutations, OrderStage, SiteEnum, TimelineEntry } from "@/hooks/useOrders";
+import { useFileUpload, UploadedFile } from "@/hooks/useFileUpload";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +44,7 @@ const OrderWorkspace = () => {
   const navigate = useNavigate();
   const { order, loading, error } = useOrder(id);
   const { updateOrder, updateStage } = useOrderMutations();
+  const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
 
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
@@ -101,7 +104,9 @@ const OrderWorkspace = () => {
   }
 
   const balance = totalAmount - advanceAmount + freightAmount;
-  const filesList = Array.isArray(order.files) ? order.files : [];
+  const uploadedFiles = Array.isArray(order.files) 
+    ? order.files as unknown as UploadedFile[]
+    : [];
 
   const canMoveToNextStage = () => {
     switch (order.stage) {
@@ -112,7 +117,7 @@ const OrderWorkspace = () => {
       case "processing":
         return processingSite !== "";
       case "dispatch":
-        return filesList.length > 0 || files.length > 0;
+        return uploadedFiles.length > 0;
       case "fitting":
         return true;
       default:
@@ -191,6 +196,15 @@ const OrderWorkspace = () => {
 
     setSaving(true);
     try {
+      // Upload new files if any
+      let allFiles = [...uploadedFiles];
+      if (files.length > 0) {
+        const newUploadedFiles = await uploadFiles(files, order.id);
+        allFiles = [...allFiles, ...newUploadedFiles];
+        setFiles([]); // Clear local files after upload
+      }
+
+      // Update order with all data including files
       await updateOrder(order.id, {
         customer_name: customerName,
         phone: phone || null,
@@ -204,11 +218,26 @@ const OrderWorkspace = () => {
         notes: notes || null,
         assign_site: assignSite || null,
         processing_site: processingSite || null,
+        files: allFiles as any,
       });
     } catch (err) {
       console.error("Failed to save order:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteFile = async (file: UploadedFile, index: number) => {
+    const confirmed = window.confirm(`Delete ${file.name}?`);
+    if (!confirmed) return;
+
+    const success = await deleteFile(file.path);
+    if (success) {
+      // Remove from order files
+      const updatedFiles = uploadedFiles.filter((_, i) => i !== index);
+      await updateOrder(order.id, {
+        files: updatedFiles as any,
+      });
     }
   };
 
@@ -553,28 +582,58 @@ const OrderWorkspace = () => {
               {/* File Upload */}
               <div className="space-y-2">
                 <Label>Attach Files</Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload size charts, design specifications, or other documents
+                </p>
                 <FileUpload
                   value={files}
                   onChange={setFiles}
                   maxFiles={10}
                   maxSize={10}
+                  uploading={uploading}
+                  progress={progress}
+                  accept="application/pdf,image/*,.doc,.docx"
                 />
-                {filesList.length > 0 && (
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm text-muted-foreground">Existing files:</p>
-                    {filesList.map((file: any, index: number) => (
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm font-semibold">Uploaded Files:</p>
+                    {uploadedFiles.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-2 p-2 rounded border"
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-card"
                       >
-                        <FileIcon className="w-4 h-4" />
-                        <span className="text-sm flex-1">{file.name || `File ${index + 1}`}</span>
-                        <Button size="sm" variant="ghost">
+                        <FileIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(file.uploaded_at).toLocaleDateString()} • {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => downloadFile(file.path, file.name)}
+                        >
                           <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteFile(file, index)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <X className="w-4 h-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
+                )}
+                {order.stage === "dispatch" && uploadedFiles.length === 0 && files.length === 0 && (
+                  <p className="text-sm text-destructive mt-2">
+                    ⚠️ Files are required before moving to Dispatch stage
+                  </p>
                 )}
               </div>
             </CardContent>

@@ -150,7 +150,7 @@ export const useOrder = (id: string | undefined) => {
 export const useOrderMutations = () => {
   const { user, profile } = useAuth();
   
-  const createOrder = async (orderData: Omit<OrderInsert, 'timeline'>) => {
+  const createOrder = async (orderData: Omit<OrderInsert, 'timeline'> & { files?: any[] }) => {
     try {
       const timeline: TimelineEntry[] = [{
         timestamp: new Date().toISOString(),
@@ -163,7 +163,8 @@ export const useOrderMutations = () => {
         .from('orders')
         .insert({
           ...orderData,
-          timeline: timeline as any
+          timeline: timeline as any,
+          files: (orderData.files || []) as any
         })
         .select()
         .single();
