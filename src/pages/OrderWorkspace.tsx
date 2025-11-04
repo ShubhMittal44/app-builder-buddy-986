@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, ChevronRight, FileIcon, Download } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { mockOrders } from "@/lib/mock-data";
+import { LoadingSpinner } from "@/components/LoadingStates";
 import { toast } from "@/hooks/use-toast";
+import { useOrder, useOrderMutations, OrderStage, SiteEnum, TimelineEntry } from "@/hooks/useOrders";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,30 +28,70 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const OrderWorkspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const order = mockOrders.find((o) => o.id === id);
+  const { order, loading, error } = useOrder(id);
+  const { updateOrder, updateStage } = useOrderMutations();
 
-  const [customerName, setCustomerName] = useState(order?.customerName || "");
-  const [phone, setPhone] = useState(order?.phone || "");
-  const [address, setAddress] = useState(order?.address || "");
-  const [city, setCity] = useState(order?.city || "");
-  const [totalAmount, setTotalAmount] = useState(order?.totalAmount || 0);
-  const [advanceAmount, setAdvanceAmount] = useState(order?.advanceAmount || 0);
-  const [freightAmount, setFreightAmount] = useState(order?.freightAmount || 0);
-  const [notes, setNotes] = useState(order?.notes || "");
-  const [assignSite, setAssignSite] = useState(order?.assignSite || "");
-  const [processingSite, setProcessingSite] = useState(order?.processingSite || "");
+  const [customerName, setCustomerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [orderDate, setOrderDate] = useState<Date | undefined>(undefined);
+  const [estimatedDuration, setEstimatedDuration] = useState("");
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [advanceAmount, setAdvanceAmount] = useState(0);
+  const [freightAmount, setFreightAmount] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [assignSite, setAssignSite] = useState<SiteEnum | "">("");
+  const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
   const [files, setFiles] = useState<File[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  if (!order) {
+  // Populate form fields when order loads
+  useEffect(() => {
+    if (order) {
+      setCustomerName(order.customer_name);
+      setPhone(order.phone || "");
+      setAddress(order.address || "");
+      setCity(order.city || "");
+      setOrderDate(order.order_date ? new Date(order.order_date) : undefined);
+      setEstimatedDuration(order.estimated_duration?.toString() || "");
+      setTotalAmount(order.total_amount || 0);
+      setAdvanceAmount(order.advance_amount || 0);
+      setFreightAmount(order.freight_amount || 0);
+      setNotes(order.notes || "");
+      setAssignSite(order.assign_site || "");
+      setProcessingSite(order.processing_site || "");
+    }
+  }, [order]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error || !order) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Order Not Found</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            {error || "Order Not Found"}
+          </h2>
           <Button asChild>
             <Link to="/">Back to Orders</Link>
           </Button>
@@ -59,17 +101,18 @@ const OrderWorkspace = () => {
   }
 
   const balance = totalAmount - advanceAmount + freightAmount;
+  const filesList = Array.isArray(order.files) ? order.files : [];
 
   const canMoveToNextStage = () => {
     switch (order.stage) {
       case "intake":
         return true;
-      case "assign":
+      case "assign_site":
         return assignSite !== "";
       case "processing":
         return processingSite !== "";
       case "dispatch":
-        return order.files.length > 0 || files.length > 0;
+        return filesList.length > 0 || files.length > 0;
       case "fitting":
         return true;
       default:
@@ -77,11 +120,28 @@ const OrderWorkspace = () => {
     }
   };
 
+  const getNextStage = (): OrderStage => {
+    switch (order.stage) {
+      case "intake":
+        return "assign_site";
+      case "assign_site":
+        return "processing";
+      case "processing":
+        return "dispatch";
+      case "dispatch":
+        return "fitting";
+      case "fitting":
+        return "closed";
+      default:
+        return order.stage;
+    }
+  };
+
   const getNextStageLabel = () => {
     switch (order.stage) {
       case "intake":
         return "Move to Assign Site";
-      case "assign":
+      case "assign_site":
         return "Confirm Assign Site";
       case "processing":
         return "Processing Done";
@@ -94,32 +154,62 @@ const OrderWorkspace = () => {
     }
   };
 
-  const handleNextStage = () => {
+  const handleNextStage = async () => {
     if (order.stage === "fitting") {
       setShowCloseDialog(true);
       return;
     }
 
-    toast({
-      title: "Stage Updated",
-      description: `Order moved to ${getNextStageLabel()}`,
-    });
+    try {
+      const nextStage = getNextStage();
+      await updateStage(order.id, order, nextStage);
+    } catch (err) {
+      console.error("Failed to update stage:", err);
+    }
   };
 
-  const handleCloseOrder = () => {
-    toast({
-      title: "Order Closed",
-      description: "Order has been successfully completed",
-    });
-    setShowCloseDialog(false);
-    navigate("/");
+  const handleCloseOrder = async () => {
+    try {
+      await updateStage(order.id, order, "closed");
+      setShowCloseDialog(false);
+      navigate("/");
+    } catch (err) {
+      console.error("Failed to close order:", err);
+      setShowCloseDialog(false);
+    }
   };
 
-  const handleSave = () => {
-    toast({
-      title: "Changes Saved",
-      description: "Order details have been updated",
-    });
+  const handleSave = async () => {
+    if (!customerName.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Customer name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateOrder(order.id, {
+        customer_name: customerName,
+        phone: phone || null,
+        address: address || null,
+        city: city || null,
+        order_date: orderDate ? format(orderDate, 'yyyy-MM-dd') : order.order_date,
+        estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
+        total_amount: totalAmount || null,
+        advance_amount: advanceAmount || null,
+        freight_amount: freightAmount || null,
+        notes: notes || null,
+        assign_site: assignSite || null,
+        processing_site: processingSite || null,
+      });
+    } catch (err) {
+      console.error("Failed to save order:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -147,6 +237,10 @@ const OrderWorkspace = () => {
       minute: "2-digit",
     });
   };
+
+  const timeline = Array.isArray(order.timeline) 
+    ? order.timeline as unknown as TimelineEntry[]
+    : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -188,15 +282,15 @@ const OrderWorkspace = () => {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <h2 className="text-3xl font-bold font-mono">
-                      Order #{order.orderNumber}
+                      Order #{order.order_number}
                     </h2>
                     <p className="text-xl text-muted-foreground mt-1">
-                      {order.customerName}
+                      {order.customer_name}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <StageBadge stage={order.stage} />
-                    <Badge variant="outline">{formatDate(order.orderDate)}</Badge>
+                    <Badge variant="outline">{formatDate(order.order_date)}</Badge>
                     {order.city && <Badge variant="outline">{order.city}</Badge>}
                   </div>
                 </div>
@@ -237,7 +331,7 @@ const OrderWorkspace = () => {
             <CardContent className="pt-6">
               <OrderStepper currentStage={order.stage} />
               {order.stage !== "closed" && (
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex flex-col items-center gap-2">
                   <Button
                     size="lg"
                     onClick={handleNextStage}
@@ -247,8 +341,10 @@ const OrderWorkspace = () => {
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                   {!canMoveToNextStage() && (
-                    <p className="text-sm text-destructive mt-2">
-                      Complete required fields to proceed
+                    <p className="text-sm text-destructive">
+                      {order.stage === "assign_site" && "Please select assign site"}
+                      {order.stage === "processing" && "Please select processing site"}
+                      {order.stage === "dispatch" && "Please upload files before dispatching"}
                     </p>
                   )}
                 </div>
@@ -256,7 +352,7 @@ const OrderWorkspace = () => {
             </CardContent>
           </Card>
 
-          {/* Details Form */}
+          {/* Order Details Form */}
           <Card>
             <CardHeader>
               <CardTitle>Order Details</CardTitle>
@@ -265,7 +361,9 @@ const OrderWorkspace = () => {
               {/* Customer Information */}
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Label htmlFor="customerName">
+                    Customer Name <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     id="customerName"
                     value={customerName}
@@ -277,6 +375,7 @@ const OrderWorkspace = () => {
                   <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
+                    type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                   />
@@ -299,10 +398,48 @@ const OrderWorkspace = () => {
                     onChange={(e) => setCity(e.target.value)}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Order Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !orderDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {orderDate ? format(orderDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={orderDate}
+                        onSelect={setOrderDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="duration">Estimated Duration (days)</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    value={estimatedDuration}
+                    onChange={(e) => setEstimatedDuration(e.target.value)}
+                    min="1"
+                  />
+                </div>
               </div>
 
-              {/* Financial Information */}
               <Separator />
+
+              {/* Financial Information */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Financial Details</h3>
                 <div className="grid md:grid-cols-3 gap-6">
@@ -333,60 +470,76 @@ const OrderWorkspace = () => {
                     />
                   </div>
                 </div>
+
+                <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">
+                      Calculated Balance:
+                    </span>
+                    <span className="text-xl font-bold text-accent">
+                      {formatCurrency(balance)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Balance = Total - Advance + Freight
+                  </p>
+                </div>
               </div>
 
-              {/* Site Assignment */}
-              {(order.stage === "assign" ||
-                order.stage === "processing" ||
-                order.stage === "dispatch" ||
-                order.stage === "fitting" ||
-                order.stage === "closed") && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Site Assignment</h3>
-                    <RadioGroup value={assignSite} onValueChange={setAssignSite}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="naka" id="naka" />
-                        <Label htmlFor="naka">Naka</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="godown" id="godown" />
-                        <Label htmlFor="godown">Godown</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </>
-              )}
+              <Separator />
 
-              {/* Processing Site */}
-              {(order.stage === "processing" ||
-                order.stage === "dispatch" ||
-                order.stage === "fitting" ||
-                order.stage === "closed") && (
-                <>
-                  <Separator />
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Processing Site</h3>
+              {/* Site Assignments */}
+              {(order.stage === "assign_site" || order.stage === "processing" || 
+                order.stage === "dispatch" || order.stage === "fitting" || order.stage === "closed") && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Site Assignment</h3>
+                  <div className="space-y-2">
+                    <Label>Assign Site</Label>
                     <RadioGroup
-                      value={processingSite}
-                      onValueChange={setProcessingSite}
+                      value={assignSite}
+                      onValueChange={(value) => setAssignSite(value as SiteEnum)}
                     >
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="naka" id="proc-naka" />
-                        <Label htmlFor="proc-naka">Naka</Label>
+                        <RadioGroupItem value="naka" id="assign-naka" />
+                        <Label htmlFor="assign-naka">Naka</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="godown" id="proc-godown" />
-                        <Label htmlFor="proc-godown">Godown</Label>
+                        <RadioGroupItem value="godown" id="assign-godown" />
+                        <Label htmlFor="assign-godown">Godown</Label>
                       </div>
                     </RadioGroup>
                   </div>
-                </>
+                </div>
+              )}
+
+              {(order.stage === "processing" || order.stage === "dispatch" || 
+                order.stage === "fitting" || order.stage === "closed") && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Processing Site</Label>
+                    <RadioGroup
+                      value={processingSite}
+                      onValueChange={(value) => setProcessingSite(value as SiteEnum)}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="naka" id="processing-naka" />
+                        <Label htmlFor="processing-naka">Naka</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="godown" id="processing-godown" />
+                        <Label htmlFor="processing-godown">Godown</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
+              )}
+
+              {(order.stage === "assign_site" || order.stage === "processing" || 
+                order.stage === "dispatch" || order.stage === "fitting" || order.stage === "closed") && (
+                <Separator />
               )}
 
               {/* Notes */}
-              <Separator />
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes</Label>
                 <Textarea
@@ -397,33 +550,32 @@ const OrderWorkspace = () => {
                 />
               </div>
 
-              {/* Files */}
-              <Separator />
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Files</h3>
-                {order.files.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>Existing Files</Label>
-                    <div className="space-y-2">
-                      {order.files.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 p-3 rounded-lg border bg-card"
-                        >
-                          <FileIcon className="w-4 h-4 text-muted-foreground" />
-                          <span className="flex-1 text-sm">{file}</span>
-                          <Button variant="ghost" size="icon">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
+              {/* File Upload */}
+              <div className="space-y-2">
+                <Label>Attach Files</Label>
+                <FileUpload
+                  value={files}
+                  onChange={setFiles}
+                  maxFiles={10}
+                  maxSize={10}
+                />
+                {filesList.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm text-muted-foreground">Existing files:</p>
+                    {filesList.map((file: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-2 rounded border"
+                      >
+                        <FileIcon className="w-4 h-4" />
+                        <span className="text-sm flex-1">{file.name || `File ${index + 1}`}</span>
+                        <Button size="sm" variant="ghost">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div className="space-y-2">
-                  <Label>Upload New Files</Label>
-                  <FileUpload value={files} onChange={setFiles} />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -435,51 +587,61 @@ const OrderWorkspace = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {order.timeline.map((entry, index) => (
-                  <div key={entry.id} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-primary" />
-                      {index < order.timeline.length - 1 && (
-                        <div className="w-0.5 flex-1 bg-border mt-2" />
-                      )}
-                    </div>
-                    <div className="flex-1 pb-6">
-                      <p className="font-medium">{entry.action}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.user} • {formatTimestamp(entry.timestamp)}
-                      </p>
-                      {entry.fromStage && entry.toStage && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <StageBadge stage={entry.fromStage} />
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                          <StageBadge stage={entry.toStage} />
+                {timeline.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">
+                    No timeline entries yet
+                  </p>
+                ) : (
+                  timeline
+                    .slice()
+                    .reverse()
+                    .map((entry, index) => (
+                      <div key={index} className="flex gap-4 pb-4 border-b last:border-0">
+                        <div className="flex-shrink-0 w-2 h-2 mt-2 rounded-full bg-primary" />
+                        <div className="flex-1">
+                          <p className="font-medium">{entry.action}</p>
+                          <div className="flex flex-wrap gap-2 mt-1 text-sm text-muted-foreground">
+                            <span>{entry.user}</span>
+                            <span>•</span>
+                            <span>{formatTimestamp(entry.timestamp)}</span>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                      </div>
+                    ))
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Save Button */}
+          {/* Sticky Save Button */}
           <div className="sticky bottom-4 flex justify-end">
-            <Button size="lg" onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
+            <Button size="lg" onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <>
+                  <div className="mr-2">
+                    <LoadingSpinner size="sm" />
+                  </div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </div>
         </div>
       </main>
 
-      {/* Close Order Confirmation Dialog */}
+      {/* Close Order Dialog */}
       <AlertDialog open={showCloseDialog} onOpenChange={setShowCloseDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Close Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to close this order? This action marks the
-              order as completed and cannot be undone.
+              Are you sure you want to close this order? This action marks the order
+              as completed and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -490,7 +652,7 @@ const OrderWorkspace = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
       <OfflineIndicator />
     </div>
   );

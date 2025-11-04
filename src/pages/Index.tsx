@@ -73,7 +73,7 @@ const Index = () => {
                 <div className="flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors">
                   <ClipboardList className="w-8 h-8 text-stage-assign" />
                   <div>
-                    <StageBadge stage="assign" />
+                    <StageBadge stage="assign_site" />
                     <p className="text-sm text-muted-foreground mt-1">Assign to site</p>
                   </div>
                 </div>

@@ -1,18 +1,20 @@
 import * as React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OrderStage } from "./ui/stage-badge";
+import { Enums } from "@/integrations/supabase/types";
+
+type OrderStage = Enums<'order_stage_enum'>;
 
 const steps: { stage: OrderStage; label: string }[] = [
   { stage: "intake", label: "Intake" },
-  { stage: "assign", label: "Assign Site" },
+  { stage: "assign_site", label: "Assign Site" },
   { stage: "processing", label: "Processing" },
   { stage: "dispatch", label: "Dispatch" },
   { stage: "fitting", label: "Fitting" },
   { stage: "closed", label: "Closed" },
 ];
 
-const stageOrder = ["intake", "assign", "processing", "dispatch", "fitting", "closed"];
+const stageOrder = ["intake", "assign_site", "processing", "dispatch", "fitting", "closed"];
 
 interface OrderStepperProps {
   currentStage: OrderStage;

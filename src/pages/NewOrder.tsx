@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,13 +17,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useOrderMutations } from "@/hooks/useOrders";
+import { LoadingSpinner } from "@/components/LoadingStates";
 
 const NewOrder = () => {
   const navigate = useNavigate();
+  const { createOrder } = useOrderMutations();
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -34,10 +36,11 @@ const NewOrder = () => {
   const [freightAmount, setFreightAmount] = useState(0);
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const balance = totalAmount - advanceAmount + freightAmount;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!customerName.trim()) {
@@ -49,16 +52,29 @@ const NewOrder = () => {
       return;
     }
 
-    // Simulate order creation
-    toast({
-      title: "Order Created",
-      description: "Order #1000000005 has been created successfully",
-    });
+    setSubmitting(true);
+    
+    try {
+      const newOrder = await createOrder({
+        customer_name: customerName,
+        phone: phone || null,
+        address: address || null,
+        city: city || null,
+        order_date: format(orderDate, 'yyyy-MM-dd'),
+        estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
+        total_amount: totalAmount || null,
+        advance_amount: advanceAmount || null,
+        freight_amount: freightAmount || null,
+        notes: notes || null,
+        files: [], // File upload will be implemented in Phase 6
+      });
 
-    // Navigate to the new order (using a mock ID)
-    setTimeout(() => {
-      navigate("/orders/5");
-    }, 1000);
+      navigate(`/orders/${newOrder.id}`);
+    } catch (error) {
+      console.error('Failed to create order:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -277,12 +293,23 @@ const NewOrder = () => {
 
             {/* Actions */}
             <div className="flex justify-end gap-3 mt-6">
-              <Button type="button" variant="outline" asChild>
+              <Button type="button" variant="outline" asChild disabled={submitting}>
                 <Link to="/">Cancel</Link>
               </Button>
-              <Button type="submit" disabled={!customerName.trim()}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Order
+              <Button type="submit" disabled={!customerName.trim() || submitting}>
+                {submitting ? (
+                  <>
+                    <div className="mr-2">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Order
+                  </>
+                )}
               </Button>
             </div>
           </form>

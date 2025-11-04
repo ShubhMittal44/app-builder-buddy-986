@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 export type OrderStage = 
   | "intake"
-  | "assign"
+  | "assign_site"
   | "processing"
   | "dispatch"
   | "fitting"
@@ -20,7 +20,7 @@ const stageConfig: Record<OrderStage, { label: string; className: string }> = {
     label: "Intake",
     className: "bg-stage-intake text-white border-transparent",
   },
-  assign: {
+  assign_site: {
     label: "Assign Site",
     className: "bg-stage-assign text-white border-transparent",
   },

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Search, Filter, Plus, FileDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { StageBadge, OrderStage } from "@/components/ui/stage-badge";
+import { StageBadge } from "@/components/ui/stage-badge";
 import {
   Select,
   SelectContent,
@@ -20,20 +20,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { mockOrders } from "@/lib/mock-data";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/LoadingStates";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { useOrders, OrderStage } from "@/hooks/useOrders";
 
 type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
 type SortDirection = "asc" | "desc";
 
 const Orders = () => {
   const navigate = useNavigate();
+  const { orders, loading, error } = useOrders();
   const [searchQuery, setSearchQuery] = useState("");
-  const [stageFilter, setStageFilter] = useState<string>("all");
-  const [isLoading] = useState(false);
+  const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
   const [sortField, setSortField] = useState<SortField>("orderDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
@@ -42,27 +42,60 @@ const Orders = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const filteredOrders = useMemo(() => {
-    let filtered = mockOrders.filter((order) => {
-      const matchesSearch =
-        order.orderNumber.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        order.customerName.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        order.city?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        order.phone?.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+    let filtered = [...orders];
 
-      const matchesStage =
-        stageFilter === "all" || order.stage === stageFilter;
+    // Apply search filter
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.order_number.toString().includes(query) ||
+          order.customer_name.toLowerCase().includes(query) ||
+          order.city?.toLowerCase().includes(query) ||
+          order.address?.toLowerCase().includes(query) ||
+          order.phone?.toLowerCase().includes(query)
+      );
+    }
 
-      return matchesSearch && matchesStage;
-    });
+    // Apply stage filter
+    if (stageFilter !== "all") {
+      filtered = filtered.filter((order) => order.stage === stageFilter);
+    }
 
     // Sort orders
     filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-
-      // Handle undefined values
-      if (aValue === undefined) aValue = "";
-      if (bValue === undefined) bValue = "";
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case "orderNumber":
+          aValue = a.order_number;
+          bValue = b.order_number;
+          break;
+        case "customerName":
+          aValue = a.customer_name;
+          bValue = b.customer_name;
+          break;
+        case "city":
+          aValue = a.city || "";
+          bValue = b.city || "";
+          break;
+        case "orderDate":
+          aValue = new Date(a.order_date).getTime();
+          bValue = new Date(b.order_date).getTime();
+          break;
+        case "totalAmount":
+          aValue = a.total_amount || 0;
+          bValue = b.total_amount || 0;
+          break;
+        case "balance":
+          const aBalance = (a.total_amount || 0) - (a.advance_amount || 0) + (a.freight_amount || 0);
+          const bBalance = (b.total_amount || 0) - (b.advance_amount || 0) + (b.freight_amount || 0);
+          aValue = aBalance;
+          bValue = bBalance;
+          break;
+        default:
+          return 0;
+      }
 
       if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
@@ -72,7 +105,7 @@ const Orders = () => {
     });
 
     return filtered;
-  }, [debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+  }, [orders, debouncedSearchQuery, stageFilter, sortField, sortDirection]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -153,7 +186,7 @@ const Orders = () => {
                     aria-label="Search orders"
                   />
                 </div>
-                <Select value={stageFilter} onValueChange={setStageFilter}>
+                <Select value={stageFilter} onValueChange={(value) => setStageFilter(value as OrderStage | "all")}>
                   <SelectTrigger className="w-full md:w-48" aria-label="Filter by stage">
                     <Filter className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Filter by stage" />
@@ -161,7 +194,7 @@ const Orders = () => {
                   <SelectContent>
                     <SelectItem value="all">All Stages</SelectItem>
                     <SelectItem value="intake">Intake</SelectItem>
-                    <SelectItem value="assign">Assign Site</SelectItem>
+                    <SelectItem value="assign_site">Assign Site</SelectItem>
                     <SelectItem value="processing">Processing</SelectItem>
                     <SelectItem value="dispatch">Dispatch</SelectItem>
                     <SelectItem value="fitting">Fitting</SelectItem>
@@ -179,11 +212,13 @@ const Orders = () => {
           {/* Orders Table */}
           <Card>
             <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-6 space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full" />
-                  ))}
+              {loading ? (
+                <div className="flex items-center justify-center py-16">
+                  <LoadingSpinner size="lg" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-16 px-4">
+                  <p className="text-destructive">{error}</p>
                 </div>
               ) : filteredOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -268,42 +303,45 @@ const Orders = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrders.map((order, index) => (
-                        <TableRow
-                          key={order.id}
-                          className={`cursor-pointer hover:bg-muted/50 ${
-                            selectedRowIndex === index ? "bg-muted" : ""
-                          }`}
-                          onClick={() => navigate(`/orders/${order.id}`)}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`View order ${order.orderNumber}`}
-                        >
-                          <TableCell>
-                            <StageBadge stage={order.stage} />
-                          </TableCell>
-                          <TableCell className="font-mono font-medium">
-                            {order.orderNumber}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {order.customerName}
-                          </TableCell>
-                          <TableCell>{order.city || "—"}</TableCell>
-                          <TableCell>{formatDate(order.orderDate)}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(order.totalAmount)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(order.advanceAmount)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(order.freightAmount)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(order.balance)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredOrders.map((order, index) => {
+                        const balance = (order.total_amount || 0) - (order.advance_amount || 0) + (order.freight_amount || 0);
+                        return (
+                          <TableRow
+                            key={order.id}
+                            className={`cursor-pointer hover:bg-muted/50 ${
+                              selectedRowIndex === index ? "bg-muted" : ""
+                            }`}
+                            onClick={() => navigate(`/orders/${order.id}`)}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`View order ${order.order_number}`}
+                          >
+                            <TableCell>
+                              <StageBadge stage={order.stage} />
+                            </TableCell>
+                            <TableCell className="font-mono font-medium">
+                              {order.order_number}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {order.customer_name}
+                            </TableCell>
+                            <TableCell>{order.city || "—"}</TableCell>
+                            <TableCell>{formatDate(order.order_date)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(order.total_amount || 0)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(order.advance_amount || 0)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(order.freight_amount || 0)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(balance)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -316,7 +354,7 @@ const Orders = () => {
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
                 Showing <span className="font-medium">{filteredOrders.length}</span> of{" "}
-                <span className="font-medium">{mockOrders.length}</span> orders
+                <span className="font-medium">{orders.length}</span> orders
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" disabled>
