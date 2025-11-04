@@ -14,16 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          address: string | null
+          advance_amount: number | null
+          assign_site: Database["public"]["Enums"]["site_enum"] | null
+          city: string | null
+          created_at: string | null
+          customer_name: string
+          estimated_duration: number | null
+          files: Json | null
+          freight_amount: number | null
+          id: string
+          notes: string | null
+          order_date: string
+          order_number: number
+          phone: string | null
+          processing_site: Database["public"]["Enums"]["site_enum"] | null
+          stage: Database["public"]["Enums"]["order_stage_enum"]
+          timeline: Json | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          advance_amount?: number | null
+          assign_site?: Database["public"]["Enums"]["site_enum"] | null
+          city?: string | null
+          created_at?: string | null
+          customer_name: string
+          estimated_duration?: number | null
+          files?: Json | null
+          freight_amount?: number | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: number
+          phone?: string | null
+          processing_site?: Database["public"]["Enums"]["site_enum"] | null
+          stage?: Database["public"]["Enums"]["order_stage_enum"]
+          timeline?: Json | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          advance_amount?: number | null
+          assign_site?: Database["public"]["Enums"]["site_enum"] | null
+          city?: string | null
+          created_at?: string | null
+          customer_name?: string
+          estimated_duration?: number | null
+          files?: Json | null
+          freight_amount?: number | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          order_number?: number
+          phone?: string | null
+          processing_site?: Database["public"]["Enums"]["site_enum"] | null
+          stage?: Database["public"]["Enums"]["order_stage_enum"]
+          timeline?: Json | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          email: string
+          role: Database["public"]["Enums"]["role_enum"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          role?: Database["public"]["Enums"]["role_enum"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          role?: Database["public"]["Enums"]["role_enum"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["role_enum"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      order_stage_enum:
+        | "intake"
+        | "assign_site"
+        | "processing"
+        | "dispatch"
+        | "fitting"
+        | "closed"
+      role_enum: "admin" | "manager" | "staff"
+      site_enum: "naka" | "godown"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +260,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      order_stage_enum: [
+        "intake",
+        "assign_site",
+        "processing",
+        "dispatch",
+        "fitting",
+        "closed",
+      ],
+      role_enum: ["admin", "manager", "staff"],
+      site_enum: ["naka", "godown"],
+    },
   },
 } as const

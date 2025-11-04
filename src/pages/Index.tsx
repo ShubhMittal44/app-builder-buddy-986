@@ -1,11 +1,14 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageBadge } from "@/components/ui/stage-badge";
-import { Package, ClipboardList, Truck, Wrench, CheckCircle } from "lucide-react";
+import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon } from "lucide-react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 const Index = () => {
+  const { isAdmin, signOut } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -19,6 +22,18 @@ const Index = () => {
               </Button>
               <Button asChild>
                 <Link to="/new">Add Order</Link>
+              </Button>
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/users">
+                    <UsersIcon className="w-4 h-4 mr-2" />
+                    Users
+                  </Link>
+                </Button>
+              )}
+              <Button variant="ghost" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </Button>
             </nav>
           </div>
