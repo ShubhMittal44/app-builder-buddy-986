@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Filter, Plus, FileDown, ArrowUpDown } from "lucide-react";
+import { Search, Filter, Plus, FileDown, ArrowUpDown, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -29,6 +29,8 @@ import { useOrders, OrderStage } from "@/hooks/useOrders";
 import { useNotifications } from "@/hooks/useNotifications";
 import { exportToCSV } from "@/utils/exportOrders";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { useChalanPDF } from "@/hooks/useChalanPDF";
+import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 
 type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
 type SortDirection = "asc" | "desc";
@@ -44,6 +46,12 @@ const Orders = () => {
   const [sortField, setSortField] = useState<SortField>("orderDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [previewOrderNumber, setPreviewOrderNumber] = useState<number>(0);
+  const [previewOrderId, setPreviewOrderId] = useState<string>('');
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  
+  const { previewPDF, downloadPDF, loading: pdfLoading } = useChalanPDF();
   
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
@@ -168,6 +176,36 @@ const Orders = () => {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handlePreviewPDF = async (e: React.MouseEvent, orderId: string, orderNumber: number) => {
+    e.stopPropagation(); // Prevent row click
+    const url = await previewPDF(orderId);
+    if (url) {
+      setPdfPreviewUrl(url);
+      setPreviewOrderNumber(orderNumber);
+      setPreviewOrderId(orderId);
+      setShowPdfModal(true);
+    }
+  };
+
+  const handleDownloadPDF = async (e: React.MouseEvent, orderId: string, orderNumber: number) => {
+    e.stopPropagation(); // Prevent row click
+    await downloadPDF(orderId, orderNumber);
+  };
+
+  const handleDownloadFromModal = async () => {
+    if (previewOrderId) {
+      await downloadPDF(previewOrderId, previewOrderNumber);
+    }
+  };
+
+  const handleClosePdfModal = () => {
+    if (pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
+    }
+    setShowPdfModal(false);
+    setPdfPreviewUrl(null);
   };
 
   return (
@@ -340,6 +378,7 @@ const Orders = () => {
                             <ArrowUpDown className="w-3 h-3" />
                           </button>
                         </TableHead>
+                        <TableHead>Chalan / Glass Size</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -379,6 +418,38 @@ const Orders = () => {
                             <TableCell className="text-right font-semibold">
                               {formatCurrency(balance)}
                             </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              {order.files && Array.isArray(order.files) && order.files.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => handlePreviewPDF(e, order.id, order.order_number)}
+                                    disabled={pdfLoading}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Preview
+                                  </Button>
+                                  <span className="text-muted-foreground">•</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => handleDownloadPDF(e, order.id, order.order_number)}
+                                    disabled={pdfLoading}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Download
+                                  </Button>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({order.files.length})
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
                           </TableRow>
                         );
                       })}
@@ -408,6 +479,14 @@ const Orders = () => {
           )}
         </div>
       </main>
+      
+      <PDFPreviewModal
+        open={showPdfModal}
+        onOpenChange={setShowPdfModal}
+        pdfUrl={pdfPreviewUrl}
+        orderNumber={previewOrderNumber}
+        onDownload={handleDownloadFromModal}
+      />
       
       <MobileBottomNav />
       <OfflineIndicator />

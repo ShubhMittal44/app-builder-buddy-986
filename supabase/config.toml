@@ -1,1 +1,4 @@
 project_id = "cqyqjjhfwfydgusavlng"
+
+[functions.chalan-pdf]
+verify_jwt = true
