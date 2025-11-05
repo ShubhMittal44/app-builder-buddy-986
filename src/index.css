@@ -120,3 +120,18 @@ All colors MUST be HSL.
     font-family: 'JetBrains Mono', monospace;
   }
 }
+
+/* Last-resort kill switch for any injected platform badges */
+.lovable-badge,
+.lovable-footer,
+[data-lovable-badge],
+a[href*="lovable.dev"][target="_blank"],
+a[href*="lovable.app"][target="_blank"],
+a[href*="lovable.ai"][target="_blank"],
+img[alt*="Lovable"],
+footer a[href*="lovable"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
