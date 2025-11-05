@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Filter, Plus, FileDown, ArrowUpDown, Download } from "lucide-react";
+import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -31,6 +31,18 @@ import { exportToCSV } from "@/utils/exportOrders";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useChalanPDF } from "@/hooks/useChalanPDF";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SortField = "orderNumber" | "customerName" | "city" | "orderDate" | "totalAmount" | "balance";
 type SortDirection = "asc" | "desc";
@@ -39,7 +51,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useAuth();
-  const { orders, loading, error } = useOrders();
+  const { orders, loading, error, refetch } = useOrders();
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
@@ -50,6 +62,10 @@ const Orders = () => {
   const [previewOrderNumber, setPreviewOrderNumber] = useState<number>(0);
   const [previewOrderId, setPreviewOrderId] = useState<string>('');
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [deleteOrderId, setDeleteOrderId] = useState<string>('');
+  const [deleteOrderNumber, setDeleteOrderNumber] = useState<number>(0);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { generatePDF, loading: pdfLoading } = useChalanPDF();
   
@@ -223,6 +239,71 @@ const Orders = () => {
     setPdfPreviewUrl(null);
   };
 
+  const handleDeleteClick = (e: React.MouseEvent, orderId: string, orderNumber: number) => {
+    e.stopPropagation();
+    setDeleteOrderId(orderId);
+    setDeleteOrderNumber(orderNumber);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteOrderId) return;
+
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to delete orders",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(
+        `https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/admin-delete-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ order_id: deleteOrderId }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete order');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Order deleted",
+        description: result.message || `Order #${deleteOrderNumber} has been deleted`,
+      });
+
+      // Refresh the orders list
+      refetch();
+      
+      // Close dialog
+      setShowDeleteDialog(false);
+      setDeleteOrderId('');
+      setDeleteOrderNumber(0);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete order",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
       {/* Desktop Header */}
@@ -388,6 +469,7 @@ const Orders = () => {
                           </button>
                         </TableHead>
                         <TableHead>Chalan / Glass Size</TableHead>
+                        {isAdmin && <TableHead className="w-[80px]">Actions</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -448,6 +530,18 @@ const Orders = () => {
                                 <span className="text-muted-foreground">—</span>
                               )}
                             </TableCell>
+                            {isAdmin && (
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleDeleteClick(e, order.id, order.order_number)}
+                                  className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </TableCell>
+                            )}
                           </TableRow>
                         );
                       })}
@@ -485,6 +579,27 @@ const Orders = () => {
         orderNumber={previewOrderNumber}
         onDownload={handleDownloadFromModal}
       />
+      
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order #{deleteOrderNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The order and all attached chalan images will be permanently deleted from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       <MobileBottomNav />
       <OfflineIndicator />

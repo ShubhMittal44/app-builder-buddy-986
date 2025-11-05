@@ -2,3 +2,6 @@ project_id = "cqyqjjhfwfydgusavlng"
 
 [functions.chalan-pdf]
 verify_jwt = true
+
+[functions.admin-delete-order]
+verify_jwt = true

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X } from "lucide-react";
+import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,9 @@ const OrderWorkspace = () => {
   const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
   const [files, setFiles] = useState<File[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
@@ -261,6 +263,59 @@ const OrderWorkspace = () => {
     }
   };
 
+  const handleDeleteOrder = async () => {
+    if (!order) return;
+
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to delete orders",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch(
+        `https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/admin-delete-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ order_id: order.id }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete order');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Order deleted",
+        description: result.message || `Order #${order.order_number} has been deleted`,
+      });
+
+      navigate('/');
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete order",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -349,6 +404,17 @@ const OrderWorkspace = () => {
                     <Badge variant="outline">{formatDate(order.order_date)}</Badge>
                     {order.city && <Badge variant="outline">{order.city}</Badge>}
                   </div>
+                  {isAdmin && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Order
+                    </Button>
+                  )}
                 </div>
 
                 {/* Money Summary */}
@@ -737,6 +803,28 @@ const OrderWorkspace = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleCloseOrder}>
               Close Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Order Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Order #{order.order_number}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The order and all attached chalan images will be permanently deleted from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteOrder}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
