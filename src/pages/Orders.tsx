@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Filter, Plus, FileDown, ArrowUpDown, Eye, Download } from "lucide-react";
+import { Search, Filter, Plus, FileDown, ArrowUpDown, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -51,7 +51,7 @@ const Orders = () => {
   const [previewOrderId, setPreviewOrderId] = useState<string>('');
   const [showPdfModal, setShowPdfModal] = useState(false);
   
-  const { previewPDF, downloadPDF, loading: pdfLoading } = useChalanPDF();
+  const { generatePDF, loading: pdfLoading } = useChalanPDF();
   
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
@@ -178,25 +178,40 @@ const Orders = () => {
     });
   };
 
-  const handlePreviewPDF = async (e: React.MouseEvent, orderId: string, orderNumber: number) => {
+  const handleDownloadAndView = async (e: React.MouseEvent, orderId: string, orderNumber: number) => {
     e.stopPropagation(); // Prevent row click
-    const url = await previewPDF(orderId);
-    if (url) {
-      setPdfPreviewUrl(url);
-      setPreviewOrderNumber(orderNumber);
-      setPreviewOrderId(orderId);
-      setShowPdfModal(true);
-    }
-  };
-
-  const handleDownloadPDF = async (e: React.MouseEvent, orderId: string, orderNumber: number) => {
-    e.stopPropagation(); // Prevent row click
-    await downloadPDF(orderId, orderNumber);
+    
+    // Generate PDF blob
+    const blob = await generatePDF(orderId, false);
+    if (!blob) return;
+    
+    // Create object URL
+    const url = URL.createObjectURL(blob);
+    
+    // 1. Open in modal viewer
+    setPdfPreviewUrl(url);
+    setPreviewOrderNumber(orderNumber);
+    setPreviewOrderId(orderId);
+    setShowPdfModal(true);
+    
+    // 2. Trigger download
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chalan_${orderNumber}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleDownloadFromModal = async () => {
-    if (previewOrderId) {
-      await downloadPDF(previewOrderId, previewOrderNumber);
+    if (previewOrderId && pdfPreviewUrl) {
+      // Trigger download from existing blob URL
+      const a = document.createElement('a');
+      a.href = pdfPreviewUrl;
+      a.download = `chalan_${previewOrderNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   };
 
@@ -304,17 +319,11 @@ const Orders = () => {
                     <Search className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No orders found</h3>
-                  <p className="text-muted-foreground text-center mb-4">
+                  <p className="text-muted-foreground text-center">
                     {searchQuery || stageFilter !== "all"
                       ? "Try adjusting your search or filters"
-                      : "Get started by creating your first order"}
+                      : "No orders yet"}
                   </p>
-                  <Button asChild>
-                    <Link to="/new">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Order
-                    </Link>
-                  </Button>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -424,18 +433,7 @@ const Orders = () => {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={(e) => handlePreviewPDF(e, order.id, order.order_number)}
-                                    disabled={pdfLoading}
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    <Eye className="h-3 w-3 mr-1" />
-                                    Preview
-                                  </Button>
-                                  <span className="text-muted-foreground">•</span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => handleDownloadPDF(e, order.id, order.order_number)}
+                                    onClick={(e) => handleDownloadAndView(e, order.id, order.order_number)}
                                     disabled={pdfLoading}
                                     className="h-7 px-2 text-xs"
                                   >
