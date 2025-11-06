@@ -35,7 +35,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const token = authHeader.replace('Bearer ', '').trim();
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
