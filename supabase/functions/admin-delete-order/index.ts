@@ -42,25 +42,14 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get current user (explicitly parse token)
-    const token = authHeader.replace('Bearer ', '').trim();
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if user is admin
+    // Verify admin via RLS-protected profiles table (no need to decode token)
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
-      .eq('user_id', user.id)
       .single();
 
     if (profileError || !profile || profile.role !== 'admin') {
-      console.log('Permission denied:', { user_id: user.id, profile });
+      console.log('Permission denied:', { profileError, profile });
       return new Response(
         JSON.stringify({ error: 'Forbidden: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -78,7 +67,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('Admin delete request:', { order_id, admin_user: user.email });
+    console.log('Admin delete request:', { order_id });
 
     // Fetch order to get file information (use admin client to bypass RLS)
     const { data: order, error: orderError } = await supabaseAdmin
