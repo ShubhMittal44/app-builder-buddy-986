@@ -204,7 +204,21 @@ const Orders = () => {
         body: { ids: Array.from(selectedIds) },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (error) throw error;
+      if (error) {
+        // Fallback to direct fetch if needed
+        const resp = await fetch(`https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/admin-bulk-delete-orders`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
+        if (!resp.ok) {
+          const errJson = await resp.json().catch(() => ({}));
+          throw new Error(errJson.error || `Bulk delete failed (${resp.status})`);
+        }
+      }
       toast({ title: 'Deleted orders', description: `Deleted ${Array.from(selectedIds).length} orders` });
       clearSelection();
       refetch();
