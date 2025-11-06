@@ -54,8 +54,6 @@ const Orders = () => {
   const { isAdmin } = useAuth();
   const { orders, loading, error, refetch } = useOrders();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const allFilteredSelected = useMemo(() => selectedIds.size > 0 && filteredOrders.every(o => selectedIds.has(o.id)), [selectedIds, /* filteredOrders referenced after declaration */]);
-  const someFilteredSelected = useMemo(() => selectedIds.size > 0 && filteredOrders.some(o => selectedIds.has(o.id)) && !allFilteredSelected, [selectedIds, /* filteredOrders */ allFilteredSelected]);
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
@@ -162,6 +160,15 @@ const Orders = () => {
 
     return filtered;
   }, [orders, debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+
+  const allFilteredSelected = useMemo(
+    () => selectedIds.size > 0 && filteredOrders.every(o => selectedIds.has(o.id)),
+    [selectedIds, filteredOrders]
+  );
+  const someFilteredSelected = useMemo(
+    () => selectedIds.size > 0 && filteredOrders.some(o => selectedIds.has(o.id)) && !allFilteredSelected,
+    [selectedIds, filteredOrders, allFilteredSelected]
+  );
 
   const toggleSelectAllFiltered = (checked: boolean) => {
     setSelectedIds((prev) => {
