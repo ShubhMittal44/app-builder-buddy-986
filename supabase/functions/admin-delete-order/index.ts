@@ -69,8 +69,9 @@ Deno.serve(async (req) => {
 
     // Parse request body (support order_id or id)
     const body = await req.json().catch(() => ({} as any));
-    const order_id: string = body.order_id || body.id;
-    if (!order_id || typeof order_id !== 'string') {
+    const rawId: string | undefined = body.order_id || body.id;
+    const order_id = (typeof rawId === 'string' ? rawId.trim() : undefined) as string | undefined;
+    if (!order_id) {
       return new Response(
         JSON.stringify({ error: 'Missing order_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,10 +85,10 @@ Deno.serve(async (req) => {
       .from('orders')
       .select('id, order_number, files, chalan_files')
       .eq('id', order_id)
-      .single();
+      .maybeSingle();
 
     if (orderError || !order) {
-      console.error('Order not found:', orderError);
+      console.error('Order not found or read error:', { orderError, order_id });
       return new Response(
         JSON.stringify({ error: 'Order not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
