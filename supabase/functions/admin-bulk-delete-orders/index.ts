@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     // Fetch orders to gather storage file paths (use admin client to bypass RLS)
     const { data: orders, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, files, chalan_files')
+      .select('id, order_number, files')
       .in('id', ids);
 
     if (fetchError) {
@@ -88,10 +88,8 @@ Deno.serve(async (req) => {
 
     // Collect file paths from JSON fields
     for (const order of orders ?? []) {
-      const chalanFiles: any[] = Array.isArray(order?.chalan_files) ? order!.chalan_files : [];
-      const otherFiles: any[] = Array.isArray(order?.files) ? order!.files : [];
+      const otherFiles: any[] = Array.isArray((order as any)?.files) ? (order as any).files : [];
 
-      chalanFiles.forEach((f) => f?.path && filesToDelete.push(f.path));
       otherFiles.forEach((f) => f?.path && filesToDelete.push(f.path));
 
       // Also list entire order folder

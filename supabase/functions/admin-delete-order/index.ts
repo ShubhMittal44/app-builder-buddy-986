@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Fetch order to get file information (use admin client to bypass RLS)
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, files, chalan_files')
+      .select('id, order_number, files')
       .eq('id', order_id)
       .maybeSingle();
 
@@ -100,12 +100,10 @@ Deno.serve(async (req) => {
     // Delete files from Storage
     const filesToDelete: string[] = [];
     
-    // Collect file paths from chalan_files JSON field
-    if (order.chalan_files && Array.isArray(order.chalan_files)) {
-      order.chalan_files.forEach((file: any) => {
-        if (file.path) {
-          filesToDelete.push(file.path);
-        }
+    // Collect file paths from files JSON field (if present)
+    if ((order as any).chalan_files && Array.isArray((order as any).chalan_files)) {
+      (order as any).chalan_files.forEach((file: any) => {
+        if (file.path) filesToDelete.push(file.path);
       });
     }
 
@@ -119,7 +117,7 @@ Deno.serve(async (req) => {
     }
 
     // Also delete entire folder for this order
-    const folderPath = `orders/${order_id}`;
+    const folderPath = `${order_id}`;
     const { data: folderFiles, error: listError } = await supabaseAdmin.storage
       .from('sizes_chalan')
       .list(folderPath);
