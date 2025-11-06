@@ -188,18 +188,6 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* CTA */}
-          <div className="text-center space-y-4">
-            <Button size="lg" className="gap-2" asChild>
-              <Link to="/new">
-                <Package className="w-5 h-5" />
-                Create Your First Order
-              </Link>
-            </Button>
-            <p className="text-sm text-muted-foreground">
-              Start managing your glass installation orders efficiently
-            </p>
-          </div>
         </div>
       </main>
       

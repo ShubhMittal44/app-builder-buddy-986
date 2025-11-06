@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.admin-delete-order]
 verify_jwt = true
+
+[functions.admin-bulk-delete-orders]
+verify_jwt = true

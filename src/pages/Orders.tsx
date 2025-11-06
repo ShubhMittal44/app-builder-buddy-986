@@ -32,6 +32,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useChalanPDF } from "@/hooks/useChalanPDF";
 import { PDFPreviewModal } from "@/components/PDFPreviewModal";
 import { supabase } from "@/integrations/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -52,6 +53,9 @@ const Orders = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { orders, loading, error, refetch } = useOrders();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const allFilteredSelected = useMemo(() => selectedIds.size > 0 && filteredOrders.every(o => selectedIds.has(o.id)), [selectedIds, /* filteredOrders referenced after declaration */]);
+  const someFilteredSelected = useMemo(() => selectedIds.size > 0 && filteredOrders.some(o => selectedIds.has(o.id)) && !allFilteredSelected, [selectedIds, /* filteredOrders */ allFilteredSelected]);
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
@@ -66,6 +70,8 @@ const Orders = () => {
   const [deleteOrderNumber, setDeleteOrderNumber] = useState<number>(0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
   const { generatePDF, loading: pdfLoading } = useChalanPDF();
   
@@ -156,6 +162,44 @@ const Orders = () => {
 
     return filtered;
   }, [orders, debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+
+  const toggleSelectAllFiltered = (checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        filteredOrders.forEach(o => next.add(o.id));
+      } else {
+        filteredOrders.forEach(o => next.delete(o.id));
+      }
+      return next;
+    });
+  };
+
+  const toggleRow = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-bulk-delete-orders', {
+        body: { ids: Array.from(selectedIds) },
+      });
+      if (error) throw error;
+      toast({ title: 'Deleted orders', description: `Deleted ${Array.from(selectedIds).length} orders` });
+      clearSelection();
+      refetch();
+    } catch (err: any) {
+      console.error('Bulk delete error:', err);
+      toast({ title: 'Bulk delete failed', description: err.message || 'Failed to delete orders', variant: 'destructive' });
+    }
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -261,24 +305,12 @@ const Orders = () => {
         return;
       }
 
-      const response = await fetch(
-        `https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/admin-delete-order`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ order_id: deleteOrderId }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('admin-delete-order', {
+        body: { order_id: deleteOrderId },
+      });
+      if (error) throw error;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete order');
-      }
-
-      const result = await response.json();
+      const result = data as any;
       
       toast({
         title: "Order deleted",
@@ -383,6 +415,21 @@ const Orders = () => {
             </CardContent>
           </Card>
 
+          {/* Bulk selection toolbar */}
+          {isAdmin && selectedIds.size > 0 && (
+            <Card>
+              <CardContent className="py-3 flex items-center justify-between">
+                <div className="text-sm">
+                  <span className="font-medium">{selectedIds.size}</span> selected
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={clearSelection}>Clear</Button>
+                  <Button variant="destructive" size="sm" onClick={() => setShowBulkDeleteDialog(true)}>Delete selected</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Orders Table */}
           <Card>
             <CardContent className="p-0">
@@ -411,6 +458,15 @@ const Orders = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {isAdmin && (
+                          <TableHead className="w-[42px]">
+                            <Checkbox
+                              checked={allFilteredSelected ? true : (someFilteredSelected ? 'indeterminate' as any : false)}
+                              onCheckedChange={(v) => toggleSelectAllFiltered(Boolean(v))}
+                              aria-label="Select all filtered"
+                            />
+                          </TableHead>
+                        )}
                         <TableHead>Stage</TableHead>
                         <TableHead className="font-mono">
                           <button
@@ -486,6 +542,15 @@ const Orders = () => {
                             role="button"
                             aria-label={`View order ${order.order_number}`}
                           >
+                            {isAdmin && (
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <Checkbox
+                                  checked={selectedIds.has(order.id)}
+                                  onCheckedChange={(v) => toggleRow(order.id, Boolean(v))}
+                                  aria-label={`Select order ${order.order_number}`}
+                                />
+                              </TableCell>
+                            )}
                             <TableCell>
                               <StageBadge stage={order.stage} />
                             </TableCell>
@@ -572,6 +637,7 @@ const Orders = () => {
         </div>
       </main>
       
+      
       <PDFPreviewModal
         open={showPdfModal}
         onOpenChange={setShowPdfModal}
@@ -596,6 +662,33 @@ const Orders = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected orders?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to delete {selectedIds.size} orders. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsBulkDeleting(true);
+                handleBulkDelete().finally(() => {
+                  setIsBulkDeleting(false);
+                  setShowBulkDeleteDialog(false);
+                });
+              }}
+              disabled={isBulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isBulkDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

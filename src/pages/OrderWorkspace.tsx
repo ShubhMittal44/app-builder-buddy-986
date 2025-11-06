@@ -278,24 +278,15 @@ const OrderWorkspace = () => {
         return;
       }
 
-      const response = await fetch(
-        `https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/admin-delete-order`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ order_id: order.id }),
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('admin-delete-order', {
+        body: { order_id: order.id },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to delete order');
+      if (error) {
+        throw error;
       }
 
-      const result = await response.json();
+      const result = data as any;
       
       toast({
         title: "Order deleted",
