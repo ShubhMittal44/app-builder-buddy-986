@@ -78,8 +78,8 @@ Deno.serve(async (req) => {
 
     console.log('Admin delete request:', { order_id, admin_user: user.email });
 
-    // Fetch order to get file information
-    const { data: order, error: orderError } = await supabaseClient
+    // Fetch order to get file information (use admin client to bypass RLS)
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number, files, chalan_files')
       .eq('id', order_id)

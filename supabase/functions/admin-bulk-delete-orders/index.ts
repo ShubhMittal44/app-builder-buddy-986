@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
 
     console.log('Admin bulk delete request:', { count: ids.length, admin_user: user.email });
 
-    // Fetch orders to gather storage file paths
-    const { data: orders, error: fetchError } = await supabaseClient
+    // Fetch orders to gather storage file paths (use admin client to bypass RLS)
+    const { data: orders, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number, files, chalan_files')
       .in('id', ids);
