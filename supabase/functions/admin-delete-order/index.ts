@@ -67,9 +67,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body
-    const { order_id }: DeleteOrderRequest = await req.json();
-    if (!order_id) {
+    // Parse request body (support order_id or id)
+    const body = await req.json().catch(() => ({} as any));
+    const order_id: string = body.order_id || body.id;
+    if (!order_id || typeof order_id !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Missing order_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
