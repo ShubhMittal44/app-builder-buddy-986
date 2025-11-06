@@ -280,6 +280,7 @@ const OrderWorkspace = () => {
 
       const { data, error } = await supabase.functions.invoke('admin-delete-order', {
         body: { order_id: order.id },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) {

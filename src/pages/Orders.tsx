@@ -188,8 +188,14 @@ const Orders = () => {
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Auth required', description: 'You must be logged in', variant: 'destructive' });
+        return;
+      }
       const { data, error } = await supabase.functions.invoke('admin-bulk-delete-orders', {
         body: { ids: Array.from(selectedIds) },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (error) throw error;
       toast({ title: 'Deleted orders', description: `Deleted ${Array.from(selectedIds).length} orders` });
@@ -295,20 +301,21 @@ const Orders = () => {
 
     setIsDeleting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to delete orders",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke('admin-delete-order', {
-        body: { order_id: deleteOrderId },
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to delete orders",
+        variant: "destructive",
       });
-      if (error) throw error;
+      return;
+    }
+
+    const { data, error } = await supabase.functions.invoke('admin-delete-order', {
+      body: { order_id: deleteOrderId },
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (error) throw error;
 
       const result = data as any;
       
