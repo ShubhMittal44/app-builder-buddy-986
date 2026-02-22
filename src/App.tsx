@@ -14,6 +14,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Users from "./pages/Users";
 import Analytics from "./pages/Analytics";
+import StaffManagement from "./pages/StaffManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute><OrderWorkspace /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
+            <Route path="/admin/staff-management" element={<ProtectedRoute requireAdmin><StaffManagement /></ProtectedRoute>} />
             
             {/* Admin-only routes */}
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
