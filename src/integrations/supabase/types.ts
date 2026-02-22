@@ -80,6 +80,36 @@ export type Database = {
         }
         Relationships: []
       }
+      other_entries: {
+        Row: {
+          amount: number
+          created_at: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          service: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          service: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          service?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -107,6 +137,145 @@ export type Database = {
           role?: Database["public"]["Enums"]["role_enum"]
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      staff_members: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          monthly_salary: number
+          notes: string | null
+          staff_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          monthly_salary: number
+          notes?: string | null
+          staff_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          monthly_salary?: number
+          notes?: string | null
+          staff_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      staff_transactions: {
+        Row: {
+          created_at: string | null
+          entry_date: string
+          id: string
+          money_taken: number
+          notes: string | null
+          staff_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          money_taken?: number
+          notes?: string | null
+          staff_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          money_taken?: number
+          notes?: string | null
+          staff_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_transactions_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          reason: string
+          updated_at: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          reason: string
+          updated_at?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          updated_at?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_transactions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+          vehicle_number: string
+          vehicle_type: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          vehicle_number: string
+          vehicle_type: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          vehicle_number?: string
+          vehicle_type?: string
         }
         Relationships: []
       }

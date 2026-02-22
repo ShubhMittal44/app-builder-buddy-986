@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Plus, BarChart3, LogOut } from "lucide-react";
+import { Home, ClipboardList, Plus, BarChart3, Briefcase, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ export const MobileBottomNav = () => {
     { icon: ClipboardList, label: "Orders", path: "/orders" },
     { icon: Plus, label: "Add Order", path: "/new" },
     ...(isAdmin ? [{ icon: BarChart3, label: "Analytics", path: "/analytics" }] : []),
+    ...(isAdmin ? [{ icon: Briefcase, label: "Staff", path: "/admin/staff-management" }] : []),
   ];
 
   const isActive = (path: string) => {
@@ -30,7 +31,7 @@ export const MobileBottomNav = () => {
     >
       <div className={cn(
         "grid h-16",
-        isAdmin ? "grid-cols-5" : "grid-cols-4"
+        isAdmin ? "grid-cols-6" : "grid-cols-4"
       )}>
         {navItems.map((item) => {
           const Icon = item.icon;
