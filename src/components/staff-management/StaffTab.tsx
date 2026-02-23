@@ -16,7 +16,7 @@ import { format } from "date-fns";
 
 const formatINR = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-export function StaffTab() {
+export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const { members, loading, create, update, remove } = useStaffMembers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useStaffTransactions(selectedId);
@@ -60,7 +60,7 @@ export function StaffTab() {
   };
 
   // Tx dialog
-  const openAddTx = () => { setEditTx(null); setTxDate(format(new Date(), "yyyy-MM-dd")); setTxAmount(0); setTxNotes(""); setTxDialog(true); };
+  const openAddTx = () => { setEditTx(null); setTxDate(defaultDate); setTxAmount(0); setTxNotes(""); setTxDialog(true); };
   const openEditTx = (t: StaffTransaction) => { setEditTx(t); setTxDate(t.entry_date); setTxAmount(Number(t.money_taken)); setTxNotes(t.notes ?? ""); setTxDialog(true); };
   const saveTx = async () => {
     const ok = editTx
