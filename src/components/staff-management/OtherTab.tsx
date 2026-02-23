@@ -16,7 +16,7 @@ import { format } from "date-fns";
 
 const formatINR = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-export function OtherTab() {
+export function OtherTab({ defaultDate }: { defaultDate: string }) {
   const { entries, loading, create, update, remove } = useOtherEntries();
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState(false);
@@ -34,7 +34,7 @@ export function OtherTab() {
     return entries.filter(e => e.service.toLowerCase().includes(q) || (e.notes ?? "").toLowerCase().includes(q));
   }, [entries, search]);
 
-  const openAdd = () => { setEditEntry(null); setFormDate(format(new Date(), "yyyy-MM-dd")); setFormService(""); setFormAmount(0); setFormNotes(""); setDialog(true); };
+  const openAdd = () => { setEditEntry(null); setFormDate(defaultDate); setFormService(""); setFormAmount(0); setFormNotes(""); setDialog(true); };
   const openEdit = (e: OtherEntry) => { setEditEntry(e); setFormDate(e.entry_date); setFormService(e.service); setFormAmount(Number(e.amount)); setFormNotes(e.notes ?? ""); setDialog(true); };
   const save = async () => {
     const ok = editEntry

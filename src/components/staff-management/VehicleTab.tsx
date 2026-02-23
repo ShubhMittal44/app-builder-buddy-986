@@ -16,7 +16,7 @@ import { format } from "date-fns";
 
 const formatINR = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-export function VehicleTab() {
+export function VehicleTab({ defaultDate }: { defaultDate: string }) {
   const { vehicles, loading, create, update, remove } = useVehicles();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useVehicleTransactions(selectedId);
@@ -56,7 +56,7 @@ export function VehicleTab() {
     if (ok) setVDialog(false);
   };
 
-  const openAddTx = () => { setEditTx(null); setTxDate(format(new Date(), "yyyy-MM-dd")); setTxAmount(0); setTxReason(""); setTxNotes(""); setTxDialog(true); };
+  const openAddTx = () => { setEditTx(null); setTxDate(defaultDate); setTxAmount(0); setTxReason(""); setTxNotes(""); setTxDialog(true); };
   const openEditTx = (t: VehicleTransaction) => { setEditTx(t); setTxDate(t.entry_date); setTxAmount(Number(t.amount)); setTxReason(t.reason); setTxNotes(t.notes ?? ""); setTxDialog(true); };
   const saveTx = async () => {
     const ok = editTx
