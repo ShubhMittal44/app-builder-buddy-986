@@ -180,13 +180,14 @@ export function useVehicles() {
 }
 
 // ---- Vehicle Transactions Hook ----
-// vehicleId: specific id to filter, or '' to fetch ALL vehicle transactions
+// vehicleId: specific id to filter, '' to fetch ALL, '__skip__' to skip fetching
 export function useVehicleTransactions(vehicleId: string, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<VehicleTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
+    if (vehicleId === '__skip__') { setTransactions([]); return; }
     setLoading(true);
     let q = supabase.from('vehicle_transactions').select('*');
     if (vehicleId) q = q.eq('vehicle_id', vehicleId);
