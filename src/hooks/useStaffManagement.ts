@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { DateFilters, emptyFilters, getDateRange } from './useDateFilters';
 
 // ---- Types ----
 export interface StaffMember {
@@ -54,6 +55,14 @@ export interface OtherEntry {
   notes: string | null;
 }
 
+// Helper to apply date filters to a query
+function applyDateFilters(q: any, filters: DateFilters) {
+  const { from, to } = getDateRange(filters);
+  if (from) q = q.gte('entry_date', from);
+  if (to) q = q.lte('entry_date', to);
+  return q;
+}
+
 // ---- Staff Members Hook ----
 export function useStaffMembers() {
   const [members, setMembers] = useState<StaffMember[]>([]);
@@ -91,18 +100,22 @@ export function useStaffMembers() {
 }
 
 // ---- Staff Transactions Hook ----
-export function useStaffTransactions(staffId: string | null) {
+export function useStaffTransactions(staffId: string | null, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<StaffTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
     if (!staffId) { setTransactions([]); return; }
     setLoading(true);
-    const { data, error } = await supabase.from('staff_transactions').select('*').eq('staff_id', staffId).order('entry_date', { ascending: false });
+    let q = supabase.from('staff_transactions').select('*').eq('staff_id', staffId);
+    q = applyDateFilters(q, filters);
+    q = q.order('entry_date', { ascending: false });
+    const { data, error } = await q;
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else setTransactions((data as any) ?? []);
     setLoading(false);
-  }, [staffId]);
+  }, [staffId, filterKey]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -164,18 +177,22 @@ export function useVehicles() {
 }
 
 // ---- Vehicle Transactions Hook ----
-export function useVehicleTransactions(vehicleId: string | null) {
+export function useVehicleTransactions(vehicleId: string | null, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<VehicleTransaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
     if (!vehicleId) { setTransactions([]); return; }
     setLoading(true);
-    const { data, error } = await supabase.from('vehicle_transactions').select('*').eq('vehicle_id', vehicleId).order('entry_date', { ascending: false });
+    let q = supabase.from('vehicle_transactions').select('*').eq('vehicle_id', vehicleId);
+    q = applyDateFilters(q, filters);
+    q = q.order('entry_date', { ascending: false });
+    const { data, error } = await q;
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else setTransactions((data as any) ?? []);
     setLoading(false);
-  }, [vehicleId]);
+  }, [vehicleId, filterKey]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -201,17 +218,22 @@ export function useVehicleTransactions(vehicleId: string | null) {
 }
 
 // ---- Other Entries Hook ----
-export function useOtherEntries() {
+export function useOtherEntries(filters: DateFilters = emptyFilters, serviceFilter: string = '') {
   const [entries, setEntries] = useState<OtherEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('other_entries').select('*').order('entry_date', { ascending: false });
+    let q = supabase.from('other_entries').select('*');
+    q = applyDateFilters(q, filters);
+    if (serviceFilter) q = q.ilike('service', `%${serviceFilter}%`);
+    q = q.order('entry_date', { ascending: false });
+    const { data, error } = await q;
     if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
     else setEntries((data as any) ?? []);
     setLoading(false);
-  }, []);
+  }, [filterKey, serviceFilter]);
 
   useEffect(() => { fetch(); }, [fetch]);
 

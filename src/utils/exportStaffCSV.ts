@@ -25,10 +25,10 @@ export function exportStaffMembers(data: any[]) {
   downloadCsv([headers.join(','), ...rows].join('\n'), `staff_members_${dateStr()}.csv`);
 }
 
-export function exportStaffTransactions(data: any[]) {
+export function exportStaffTransactions(data: any[], suffix?: string) {
   const headers = ['Staff Name', 'Entry Date', 'Money Taken', 'Notes', 'Created At'];
   const rows = data.map(d => toCsvRow([d.staff_name ?? '', d.entry_date, d.money_taken, d.notes, d.created_at]));
-  downloadCsv([headers.join(','), ...rows].join('\n'), `staff_transactions_${dateStr()}.csv`);
+  downloadCsv([headers.join(','), ...rows].join('\n'), `staff_transactions${suffix || '_' + dateStr()}.csv`);
 }
 
 export function exportVehicles(data: any[]) {
@@ -37,14 +37,14 @@ export function exportVehicles(data: any[]) {
   downloadCsv([headers.join(','), ...rows].join('\n'), `vehicles_${dateStr()}.csv`);
 }
 
-export function exportVehicleTransactions(data: any[]) {
+export function exportVehicleTransactions(data: any[], suffix?: string) {
   const headers = ['Vehicle Number', 'Entry Date', 'Amount', 'Reason', 'Notes', 'Created At'];
   const rows = data.map(d => toCsvRow([d.vehicle_number ?? '', d.entry_date, d.amount, d.reason, d.notes, d.created_at]));
-  downloadCsv([headers.join(','), ...rows].join('\n'), `vehicle_transactions_${dateStr()}.csv`);
+  downloadCsv([headers.join(','), ...rows].join('\n'), `vehicle_transactions${suffix || '_' + dateStr()}.csv`);
 }
 
-export function exportOtherEntries(data: any[]) {
+export function exportOtherEntries(data: any[], suffix?: string) {
   const headers = ['Entry Date', 'Service', 'Amount', 'Notes', 'Created At'];
   const rows = data.map(d => toCsvRow([d.entry_date, d.service, d.amount, d.notes, d.created_at]));
-  downloadCsv([headers.join(','), ...rows].join('\n'), `other_entries_${dateStr()}.csv`);
+  downloadCsv([headers.join(','), ...rows].join('\n'), `other_entries${suffix || '_' + dateStr()}.csv`);
 }

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useVehicles, useVehicleTransactions, Vehicle, VehicleTransaction } from "@/hooks/useStaffManagement";
+import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,16 +11,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { TransactionFilters, SummaryStrip } from "@/components/staff-management/TransactionFilters";
 import { Plus, Pencil, Trash2, Search, FileDown, IndianRupee } from "lucide-react";
 import { exportVehicles, exportVehicleTransactions } from "@/utils/exportStaffCSV";
-import { format } from "date-fns";
 
 const formatINR = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
 export function VehicleTab({ defaultDate }: { defaultDate: string }) {
   const { vehicles, loading, create, update, remove } = useVehicles();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useVehicleTransactions(selectedId);
+  const { filters, update: updateFilter, clear: clearFilters, hasFilters } = useDateFilters();
+  const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useVehicleTransactions(selectedId, filters);
   const [search, setSearch] = useState("");
 
   const [vDialog, setVDialog] = useState(false);
@@ -33,7 +35,7 @@ export function VehicleTab({ defaultDate }: { defaultDate: string }) {
   const [formType, setFormType] = useState("");
   const [formActive, setFormActive] = useState(true);
   const [formNotes, setFormNotes] = useState("");
-  const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [txDate, setTxDate] = useState("");
   const [txAmount, setTxAmount] = useState(0);
   const [txReason, setTxReason] = useState("");
   const [txNotes, setTxNotes] = useState("");
@@ -63,6 +65,11 @@ export function VehicleTab({ defaultDate }: { defaultDate: string }) {
       ? await updateTx(editTx.id, { entry_date: txDate, amount: txAmount, reason: txReason, notes: txNotes || null })
       : await createTx({ entry_date: txDate, amount: txAmount, reason: txReason, notes: txNotes || null });
     if (ok) setTxDialog(false);
+  };
+
+  const handleExportTx = () => {
+    const data = transactions.map(t => ({ ...t, vehicle_number: selectedVehicle?.vehicle_number ?? "" }));
+    exportVehicleTransactions(data, filterSuffix(filters));
   };
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -122,50 +129,51 @@ export function VehicleTab({ defaultDate }: { defaultDate: string }) {
             </CardTitle>
             {selectedVehicle && (
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => exportVehicleTransactions(transactions.map(t => ({ ...t, vehicle_number: selectedVehicle.vehicle_number })))}><FileDown className="w-4 h-4 mr-1" />CSV</Button>
+                <Button variant="outline" size="sm" onClick={handleExportTx}><FileDown className="w-4 h-4 mr-1" />CSV</Button>
                 <Button size="sm" onClick={openAddTx}><Plus className="w-4 h-4 mr-1" />Add</Button>
               </div>
             )}
           </div>
-          {selectedVehicle && (
-            <div className="flex gap-4 mt-2 text-sm">
-              <div className="flex items-center gap-1"><IndianRupee className="w-3 h-3" /> Total: <strong>{formatINR(totalAmount)}</strong></div>
-            </div>
-          )}
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 px-3 pb-3">
           {!selectedVehicle ? (
             <div className="text-center text-muted-foreground py-12">Click a vehicle to view transactions</div>
-          ) : txLoading ? (
-            <div className="flex justify-center py-8"><LoadingSpinner /></div>
           ) : (
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {transactions.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
-                ) : transactions.map(t => (
-                  <TableRow key={t.id}>
-                    <TableCell>{t.entry_date}</TableCell>
-                    <TableCell>{formatINR(Number(t.amount))}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{t.reason}</TableCell>
-                    <TableCell className="max-w-[150px] truncate">{t.notes ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEditTx(t)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTxId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              <TransactionFilters filters={filters} onUpdate={updateFilter} onClear={clearFilters} hasFilters={hasFilters} />
+              <SummaryStrip label="Total Vehicle Expense" total={totalAmount} count={transactions.length} formatINR={formatINR} />
+              {txLoading ? (
+                <div className="flex justify-center py-8"><LoadingSpinner /></div>
+              ) : (
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {transactions.length === 0 ? (
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
+                    ) : transactions.map(t => (
+                      <TableRow key={t.id}>
+                        <TableCell>{t.entry_date}</TableCell>
+                        <TableCell>{formatINR(Number(t.amount))}</TableCell>
+                        <TableCell className="max-w-[150px] truncate">{t.reason}</TableCell>
+                        <TableCell className="max-w-[150px] truncate">{t.notes ?? "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEditTx(t)}><Pencil className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteTxId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
