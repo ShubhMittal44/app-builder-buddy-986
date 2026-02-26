@@ -100,13 +100,14 @@ export function useStaffMembers() {
 }
 
 // ---- Staff Transactions Hook ----
-// staffId: specific id to filter, or '' to fetch ALL staff transactions
+// staffId: specific id to filter, '' to fetch ALL, '__skip__' to skip fetching
 export function useStaffTransactions(staffId: string, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<StaffTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
+    if (staffId === '__skip__') { setTransactions([]); return; }
     setLoading(true);
     let q = supabase.from('staff_transactions').select('*');
     if (staffId) q = q.eq('staff_id', staffId);
