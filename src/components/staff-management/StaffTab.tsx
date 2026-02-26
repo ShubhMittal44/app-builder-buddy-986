@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useStaffMembers, useStaffTransactions, StaffMember, StaffTransaction } from "@/hooks/useStaffManagement";
+import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,19 +11,19 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { TransactionFilters, SummaryStrip } from "@/components/staff-management/TransactionFilters";
 import { Plus, Pencil, Trash2, Search, FileDown, IndianRupee } from "lucide-react";
 import { exportStaffMembers, exportStaffTransactions } from "@/utils/exportStaffCSV";
-import { format } from "date-fns";
 
 const formatINR = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
 export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const { members, loading, create, update, remove } = useStaffMembers();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useStaffTransactions(selectedId);
+  const { filters, update: updateFilter, clear: clearFilters, hasFilters } = useDateFilters();
+  const { transactions, loading: txLoading, create: createTx, update: updateTx, remove: removeTx } = useStaffTransactions(selectedId, filters);
   const [search, setSearch] = useState("");
 
-  // Dialogs
   const [memberDialog, setMemberDialog] = useState(false);
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
   const [deleteMemberId, setDeleteMemberId] = useState<string | null>(null);
@@ -30,12 +31,11 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const [editTx, setEditTx] = useState<StaffTransaction | null>(null);
   const [deleteTxId, setDeleteTxId] = useState<string | null>(null);
 
-  // Form state
   const [formName, setFormName] = useState("");
   const [formSalary, setFormSalary] = useState(0);
   const [formActive, setFormActive] = useState(true);
   const [formNotes, setFormNotes] = useState("");
-  const [txDate, setTxDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [txDate, setTxDate] = useState("");
   const [txAmount, setTxAmount] = useState(0);
   const [txNotes, setTxNotes] = useState("");
 
@@ -46,10 +46,8 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   }, [members, search]);
 
   const selectedMember = members.find(m => m.id === selectedId);
-
   const totalMoneyTaken = useMemo(() => transactions.reduce((s, t) => s + Number(t.money_taken), 0), [transactions]);
 
-  // Member dialog
   const openAddMember = () => { setEditMember(null); setFormName(""); setFormSalary(0); setFormActive(true); setFormNotes(""); setMemberDialog(true); };
   const openEditMember = (m: StaffMember) => { setEditMember(m); setFormName(m.staff_name); setFormSalary(m.monthly_salary); setFormActive(m.active); setFormNotes(m.notes ?? ""); setMemberDialog(true); };
   const saveMember = async () => {
@@ -59,7 +57,6 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
     if (ok) setMemberDialog(false);
   };
 
-  // Tx dialog
   const openAddTx = () => { setEditTx(null); setTxDate(defaultDate); setTxAmount(0); setTxNotes(""); setTxDialog(true); };
   const openEditTx = (t: StaffTransaction) => { setEditTx(t); setTxDate(t.entry_date); setTxAmount(Number(t.money_taken)); setTxNotes(t.notes ?? ""); setTxDialog(true); };
   const saveTx = async () => {
@@ -72,7 +69,7 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const handleExportMembers = () => exportStaffMembers(filtered);
   const handleExportTx = () => {
     const data = transactions.map(t => ({ ...t, staff_name: selectedMember?.staff_name ?? "" }));
-    exportStaffTransactions(data);
+    exportStaffTransactions(data, filterSuffix(filters));
   };
 
   if (loading) return <div className="flex justify-center py-16"><LoadingSpinner size="lg" /></div>;
@@ -140,41 +137,46 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           {selectedMember && (
             <div className="flex gap-4 mt-2 text-sm">
               <div className="flex items-center gap-1"><IndianRupee className="w-3 h-3" /> Salary: <strong>{formatINR(selectedMember.monthly_salary)}</strong></div>
-              <div className="flex items-center gap-1">Total Taken: <strong className="text-destructive">{formatINR(totalMoneyTaken)}</strong></div>
             </div>
           )}
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="p-0 px-3 pb-3">
           {!selectedMember ? (
             <div className="text-center text-muted-foreground py-12">Click a staff member to view transactions</div>
-          ) : txLoading ? (
-            <div className="flex justify-center py-8"><LoadingSpinner /></div>
           ) : (
-            <Table>
-              <TableHeader><TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Money Taken</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="w-20">Actions</TableHead>
-              </TableRow></TableHeader>
-              <TableBody>
-                {transactions.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
-                ) : transactions.map(t => (
-                  <TableRow key={t.id}>
-                    <TableCell>{t.entry_date}</TableCell>
-                    <TableCell>{formatINR(Number(t.money_taken))}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">{t.notes ?? "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEditTx(t)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTxId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              <TransactionFilters filters={filters} onUpdate={updateFilter} onClear={clearFilters} hasFilters={hasFilters} />
+              <SummaryStrip label="Total Money Taken" total={totalMoneyTaken} count={transactions.length} formatINR={formatINR} />
+              {txLoading ? (
+                <div className="flex justify-center py-8"><LoadingSpinner /></div>
+              ) : (
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Money Taken</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {transactions.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
+                    ) : transactions.map(t => (
+                      <TableRow key={t.id}>
+                        <TableCell>{t.entry_date}</TableCell>
+                        <TableCell>{formatINR(Number(t.money_taken))}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">{t.notes ?? "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => openEditTx(t)}><Pencil className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteTxId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
