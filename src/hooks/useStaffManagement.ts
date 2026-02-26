@@ -100,15 +100,17 @@ export function useStaffMembers() {
 }
 
 // ---- Staff Transactions Hook ----
-export function useStaffTransactions(staffId: string | null, filters: DateFilters = emptyFilters) {
+// staffId: specific id to filter, '' to fetch ALL, '__skip__' to skip fetching
+export function useStaffTransactions(staffId: string, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<StaffTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
-    if (!staffId) { setTransactions([]); return; }
+    if (staffId === '__skip__') { setTransactions([]); return; }
     setLoading(true);
-    let q = supabase.from('staff_transactions').select('*').eq('staff_id', staffId);
+    let q = supabase.from('staff_transactions').select('*');
+    if (staffId) q = q.eq('staff_id', staffId);
     q = applyDateFilters(q, filters);
     q = q.order('entry_date', { ascending: false });
     const { data, error } = await q;
@@ -120,7 +122,8 @@ export function useStaffTransactions(staffId: string | null, filters: DateFilter
   useEffect(() => { fetch(); }, [fetch]);
 
   const create = async (t: Partial<StaffTransaction>) => {
-    const { error } = await supabase.from('staff_transactions').insert({ ...t, staff_id: staffId } as any);
+    const payload = staffId ? { ...t, staff_id: staffId } : t;
+    const { error } = await supabase.from('staff_transactions').insert(payload as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await fetch(); return true;
   };
@@ -177,15 +180,17 @@ export function useVehicles() {
 }
 
 // ---- Vehicle Transactions Hook ----
-export function useVehicleTransactions(vehicleId: string | null, filters: DateFilters = emptyFilters) {
+// vehicleId: specific id to filter, '' to fetch ALL, '__skip__' to skip fetching
+export function useVehicleTransactions(vehicleId: string, filters: DateFilters = emptyFilters) {
   const [transactions, setTransactions] = useState<VehicleTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const filterKey = JSON.stringify(filters);
 
   const fetch = useCallback(async () => {
-    if (!vehicleId) { setTransactions([]); return; }
+    if (vehicleId === '__skip__') { setTransactions([]); return; }
     setLoading(true);
-    let q = supabase.from('vehicle_transactions').select('*').eq('vehicle_id', vehicleId);
+    let q = supabase.from('vehicle_transactions').select('*');
+    if (vehicleId) q = q.eq('vehicle_id', vehicleId);
     q = applyDateFilters(q, filters);
     q = q.order('entry_date', { ascending: false });
     const { data, error } = await q;
@@ -197,7 +202,8 @@ export function useVehicleTransactions(vehicleId: string | null, filters: DateFi
   useEffect(() => { fetch(); }, [fetch]);
 
   const create = async (t: Partial<VehicleTransaction>) => {
-    const { error } = await supabase.from('vehicle_transactions').insert({ ...t, vehicle_id: vehicleId } as any);
+    const payload = vehicleId ? { ...t, vehicle_id: vehicleId } : t;
+    const { error } = await supabase.from('vehicle_transactions').insert(payload as any);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await fetch(); return true;
   };
@@ -256,4 +262,16 @@ export function useOtherEntries(filters: DateFilters = emptyFilters, serviceFilt
   };
 
   return { entries, loading, refetch: fetch, create, update, remove };
+}
+
+// ---- Distinct Services Hook ----
+export function useDistinctServices() {
+  const [services, setServices] = useState<string[]>([]);
+  useEffect(() => {
+    supabase.from('other_entries').select('service').then(({ data }) => {
+      const unique = [...new Set((data ?? []).map((d: any) => d.service as string))].sort();
+      setServices(unique);
+    });
+  }, []);
+  return services;
 }
