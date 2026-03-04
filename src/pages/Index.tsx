@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageBadge } from "@/components/ui/stage-badge";
-import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, BarChart3, Briefcase } from "lucide-react";
+import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, BarChart3, Briefcase, BookOpen } from "lucide-react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
@@ -45,6 +45,14 @@ const Index = () => {
                   <Link to="/admin/staff-management">
                     <Briefcase className="w-4 h-4 mr-2" />
                     Staff Mgmt
+                  </Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
+                  <Link to="/admin/daybook">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    DayBook
                   </Link>
                 </Button>
               )}
