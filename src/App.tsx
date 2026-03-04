@@ -13,7 +13,7 @@ import Install from "./pages/Install";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Users from "./pages/Users";
-import Analytics from "./pages/Analytics";
+
 import StaffManagement from "./pages/StaffManagement";
 import DayBook from "./pages/DayBook";
 import NotFound from "./pages/NotFound";
@@ -43,7 +43,7 @@ const App = () => (
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
             <Route path="/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute><OrderWorkspace /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
+            
             <Route path="/admin/staff-management" element={<ProtectedRoute requireAdmin><StaffManagement /></ProtectedRoute>} />
             <Route path="/admin/daybook" element={<ProtectedRoute requireAdmin><DayBook /></ProtectedRoute>} />
             

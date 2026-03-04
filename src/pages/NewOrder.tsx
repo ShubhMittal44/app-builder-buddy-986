@@ -147,11 +147,6 @@ const NewOrder = () => {
                   <Link to="/orders">Orders</Link>
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/analytics">Analytics</Link>
-                </Button>
-              )}
             </nav>
           </div>
         </div>
