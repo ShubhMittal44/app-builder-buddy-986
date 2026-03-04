@@ -14,6 +14,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          client_name: string
+          client_name_norm: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          client_name: string
+          client_name_norm: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          client_name?: string
+          client_name_norm?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      daybook_entries: {
+        Row: {
+          advance_amount: number | null
+          challan_number: string
+          client_id: string
+          created_at: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          advance_amount?: number | null
+          challan_number: string
+          client_id: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          advance_amount?: number | null
+          challan_number?: string
+          client_id?: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daybook_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
@@ -140,6 +211,50 @@ export type Database = {
         }
         Relationships: []
       }
+      rama_entries: {
+        Row: {
+          advance_amount: number | null
+          challan_number: string
+          client_id: string
+          created_at: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          advance_amount?: number | null
+          challan_number: string
+          client_id: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          advance_amount?: number | null
+          challan_number?: string
+          client_id?: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rama_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       staff_members: {
         Row: {
           active: boolean | null
@@ -204,6 +319,50 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "staff_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toughened_diary_entries: {
+        Row: {
+          advance_amount: number | null
+          challan_number: string
+          client_id: string
+          created_at: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          advance_amount?: number | null
+          challan_number: string
+          client_id: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          advance_amount?: number | null
+          challan_number?: string
+          client_id?: string
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "toughened_diary_entries_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
