@@ -13,7 +13,7 @@ import Install from "./pages/Install";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import Users from "./pages/Users";
-import Analytics from "./pages/Analytics";
+
 import StaffManagement from "./pages/StaffManagement";
 import DayBook from "./pages/DayBook";
 import NotFound from "./pages/NotFound";
