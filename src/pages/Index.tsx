@@ -50,6 +50,14 @@ const Index = () => {
               )}
               {isAdmin && (
                 <Button variant="ghost" asChild>
+                  <Link to="/admin/daybook">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    DayBook
+                  </Link>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button variant="ghost" asChild>
                   <Link to="/admin/users">
                     <UsersIcon className="w-4 h-4 mr-2" />
                     Users

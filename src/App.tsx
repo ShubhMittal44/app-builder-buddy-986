@@ -45,6 +45,7 @@ const App = () => (
             <Route path="/orders/:id" element={<ProtectedRoute><OrderWorkspace /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute requireAdmin><Analytics /></ProtectedRoute>} />
             <Route path="/admin/staff-management" element={<ProtectedRoute requireAdmin><StaffManagement /></ProtectedRoute>} />
+            <Route path="/admin/daybook" element={<ProtectedRoute requireAdmin><DayBook /></ProtectedRoute>} />
             
             {/* Admin-only routes */}
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />

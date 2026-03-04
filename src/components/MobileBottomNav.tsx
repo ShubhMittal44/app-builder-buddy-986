@@ -13,6 +13,7 @@ export const MobileBottomNav = () => {
     { icon: Plus, label: "Add Order", path: "/new" },
     ...(isAdmin ? [{ icon: BarChart3, label: "Analytics", path: "/analytics" }] : []),
     ...(isAdmin ? [{ icon: Briefcase, label: "Staff", path: "/admin/staff-management" }] : []),
+    ...(isAdmin ? [{ icon: BookOpen, label: "DayBook", path: "/admin/daybook" }] : []),
   ];
 
   const isActive = (path: string) => {
