@@ -355,11 +355,6 @@ const OrderWorkspace = () => {
                   <Link to="/orders">Orders</Link>
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/analytics">Analytics</Link>
-                </Button>
-              )}
               <Button asChild>
                 <Link to="/new">Add Order</Link>
               </Button>

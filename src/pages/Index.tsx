@@ -29,14 +29,6 @@ const Index = () => {
                   <Link to="/orders">Orders</Link>
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/analytics">
-                    <BarChart3 className="w-4 h-4 mr-2" />
-                    Analytics
-                  </Link>
-                </Button>
-              )}
               <Button asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
