@@ -18,6 +18,7 @@ import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useClients, useDayBookEntries, Client, DayBookEntry } from "@/hooks/useDayBook";
 import { exportDayBookCSV } from "@/utils/exportDayBookCSV";
+import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, RotateCcw, Plus, Pencil, Trash2, FileDown, Search, X } from "lucide-react";
 import { format } from "date-fns";
 
