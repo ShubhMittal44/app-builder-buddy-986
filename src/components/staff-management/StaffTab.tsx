@@ -49,12 +49,12 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const selectedMember = members.find(m => m.id === selectedId);
   const totalMoneyTaken = useMemo(() => transactions.reduce((s, t) => s + Number(t.money_taken), 0), [transactions]);
 
-  const openAddMember = () => { setEditMember(null); setFormName(""); setFormSalary(0); setFormActive(true); setFormNotes(""); setMemberDialog(true); };
-  const openEditMember = (m: StaffMember) => { setEditMember(m); setFormName(m.staff_name); setFormSalary(m.monthly_salary); setFormActive(m.active); setFormNotes(m.notes ?? ""); setMemberDialog(true); };
+  const openAddMember = () => { setEditMember(null); setFormName(""); setFormSalary(0); setFormActive(true); setFormNotes(""); setFormType(""); setMemberDialog(true); };
+  const openEditMember = (m: StaffMember) => { setEditMember(m); setFormName(m.staff_name); setFormSalary(m.monthly_salary); setFormActive(m.active); setFormNotes(m.notes ?? ""); setFormType(m.staff_type ?? ""); setMemberDialog(true); };
   const saveMember = async () => {
     const ok = editMember
-      ? await update(editMember.id, { staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null })
-      : await create({ staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null });
+      ? await update(editMember.id, { staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null, staff_type: formType || null })
+      : await create({ staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null, staff_type: formType || null });
     if (ok) setMemberDialog(false);
   };
 
