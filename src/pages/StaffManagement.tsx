@@ -67,8 +67,8 @@ const StaffManagement = () => {
   // ---- Entity selector options ----
   const staffOptions = useMemo(() => [
     { value: "", label: "All Staff" },
-    ...members.map(m => ({ value: m.id, label: m.staff_name })),
-  ], [members]);
+    ...filteredMembers.map(m => ({ value: m.id, label: m.staff_name })),
+  ], [filteredMembers]);
 
   const vehicleOptions = useMemo(() => [
     { value: "", label: "All Vehicles" },
