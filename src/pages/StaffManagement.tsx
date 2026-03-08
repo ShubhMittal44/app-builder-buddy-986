@@ -86,8 +86,15 @@ const StaffManagement = () => {
     ...distinctServices.map(s => ({ value: s, label: s })),
   ], [distinctServices]);
 
+  // Filter transactions by staff type when "All Staff" is selected but type filter is active
+  const filteredStaffTx = useMemo(() => {
+    if (!staffTypeFilter || entityId) return staffTx;
+    const filteredIds = new Set(filteredMembers.map(m => m.id));
+    return staffTx.filter(t => filteredIds.has(t.staff_id));
+  }, [staffTx, staffTypeFilter, entityId, filteredMembers]);
+
   // ---- Summary ----
-  const staffTotal = useMemo(() => staffTx.reduce((s, t) => s + Number(t.money_taken), 0), [staffTx]);
+  const staffTotal = useMemo(() => filteredStaffTx.reduce((s, t) => s + Number(t.money_taken), 0), [filteredStaffTx]);
   const vehicleTotal = useMemo(() => vehicleTx.reduce((s, t) => s + Number(t.amount), 0), [vehicleTx]);
   const otherTotal = useMemo(() => otherEntries.reduce((s, e) => s + Number(e.amount), 0), [otherEntries]);
 
@@ -222,7 +229,7 @@ const StaffManagement = () => {
   const handleExport = () => {
     const suffix = filterSuffix(filters);
     if (category === "staff") {
-      const data = staffTx.map(t => ({ ...t, staff_name: staffNameMap[t.staff_id] ?? "" }));
+      const data = filteredStaffTx.map(t => ({ ...t, staff_name: staffNameMap[t.staff_id] ?? "" }));
       exportStaffTransactions(data, suffix);
     } else if (category === "vehicle") {
       const data = vehicleTx.map(t => ({ ...t, vehicle_number: vehicleNameMap[t.vehicle_id] ?? "" }));
@@ -375,7 +382,7 @@ const StaffManagement = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              {category === "staff" && <SummaryStrip label="Total Money Taken" total={staffTotal} count={staffTx.length} formatINR={formatINR} />}
+              {category === "staff" && <SummaryStrip label="Total Money Taken" total={staffTotal} count={filteredStaffTx.length} formatINR={formatINR} />}
               {category === "vehicle" && <SummaryStrip label="Total Vehicle Expense" total={vehicleTotal} count={vehicleTx.length} formatINR={formatINR} />}
               {category === "other" && <SummaryStrip label="Total Misc Amount" total={otherTotal} count={otherEntries.length} formatINR={formatINR} />}
             </div>
@@ -407,9 +414,9 @@ const StaffManagement = () => {
                         <TableHead className="w-20">Actions</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
-                        {staffTx.length === 0 ? (
+                        {filteredStaffTx.length === 0 ? (
                           <TableRow><TableCell colSpan={entityId ? 4 : 5} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
-                        ) : staffTx.map(t => (
+                        ) : filteredStaffTx.map(t => (
                           <TableRow key={t.id}>
                             <TableCell>{t.entry_date}</TableCell>
                             {!entityId && <TableCell className="font-medium">{staffNameMap[t.staff_id] ?? "—"}</TableCell>}
