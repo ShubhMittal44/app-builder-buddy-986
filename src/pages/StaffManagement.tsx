@@ -311,17 +311,31 @@ const StaffManagement = () => {
             {/* Entity selector */}
             <div className="flex flex-wrap items-end gap-3">
               {category === "staff" && (
-                <div className="flex flex-col gap-1 min-w-[200px]">
-                  <Label className="text-xs">Staff Name</Label>
-                  <SearchableSelect
-                    value={entityId}
-                    onValueChange={v => setEntityId(v)}
-                    options={staffOptions}
-                    placeholder="All Staff"
-                    searchPlaceholder="Search staff..."
-                    className="h-9"
-                  />
-                </div>
+                <>
+                  <div className="flex flex-col gap-1 min-w-[150px]">
+                    <Label className="text-xs">Type</Label>
+                    <select
+                      value={staffTypeFilter}
+                      onChange={e => { setStaffTypeFilter(e.target.value as StaffType | ""); setEntityId(""); }}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="">All</option>
+                      <option value="Shop staff">Shop staff</option>
+                      <option value="Godown staff">Godown staff</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-[200px]">
+                    <Label className="text-xs">Staff Name</Label>
+                    <SearchableSelect
+                      value={entityId}
+                      onValueChange={v => setEntityId(v)}
+                      options={staffOptions}
+                      placeholder="All Staff"
+                      searchPlaceholder="Search staff..."
+                      className="h-9"
+                    />
+                  </div>
+                </>
               )}
               {category === "vehicle" && (
                 <div className="flex flex-col gap-1 min-w-[200px]">
