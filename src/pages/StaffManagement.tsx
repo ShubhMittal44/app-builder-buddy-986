@@ -233,7 +233,13 @@ const StaffManagement = () => {
     setServiceSearch("");
   };
 
-  const isAnyFilter = hasFilters || entityId !== "" || serviceSearch !== "";
+  // Filter members by staff_type for the entity selector and manage dialog
+  const filteredMembers = useMemo(() => {
+    if (!staffTypeFilter) return members;
+    return members.filter(m => m.staff_type === staffTypeFilter);
+  }, [members, staffTypeFilter]);
+
+  const isAnyFilter = hasFilters || entityId !== "" || serviceSearch !== "" || staffTypeFilter !== "";
   const isLoading = category === "staff" ? staffTxLoading : category === "vehicle" ? vehicleTxLoading : otherLoading;
 
   if (!isAdmin) return null;
