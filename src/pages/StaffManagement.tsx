@@ -231,6 +231,7 @@ const StaffManagement = () => {
     clearFilters();
     setEntityId("");
     setServiceSearch("");
+    setStaffTypeFilter("");
   };
 
   // Filter members by staff_type for the entity selector and manage dialog
