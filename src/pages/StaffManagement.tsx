@@ -414,9 +414,9 @@ const StaffManagement = () => {
                         <TableHead className="w-20">Actions</TableHead>
                       </TableRow></TableHeader>
                       <TableBody>
-                        {staffTx.length === 0 ? (
+                        {filteredStaffTx.length === 0 ? (
                           <TableRow><TableCell colSpan={entityId ? 4 : 5} className="text-center text-muted-foreground py-8">No transactions</TableCell></TableRow>
-                        ) : staffTx.map(t => (
+                        ) : filteredStaffTx.map(t => (
                           <TableRow key={t.id}>
                             <TableCell>{t.entry_date}</TableCell>
                             {!entityId && <TableCell className="font-medium">{staffNameMap[t.staff_id] ?? "—"}</TableCell>}
