@@ -18,7 +18,7 @@ import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useStaffMembers, useStaffTransactions, useVehicles, useVehicleTransactions, useOtherEntries, useDistinctServices,
-  StaffMember, StaffTransaction, Vehicle, VehicleTransaction, OtherEntry,
+  StaffMember, StaffTransaction, Vehicle, VehicleTransaction, OtherEntry, StaffType,
 } from "@/hooks/useStaffManagement";
 import { exportStaffMembers, exportStaffTransactions, exportVehicles, exportVehicleTransactions, exportOtherEntries } from "@/utils/exportStaffCSV";
 import { ArrowLeft, RotateCcw, Plus, Pencil, Trash2, FileDown, Settings2, Search } from "lucide-react";
