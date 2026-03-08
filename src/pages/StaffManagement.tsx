@@ -229,7 +229,7 @@ const StaffManagement = () => {
   const handleExport = () => {
     const suffix = filterSuffix(filters);
     if (category === "staff") {
-      const data = staffTx.map(t => ({ ...t, staff_name: staffNameMap[t.staff_id] ?? "" }));
+      const data = filteredStaffTx.map(t => ({ ...t, staff_name: staffNameMap[t.staff_id] ?? "" }));
       exportStaffTransactions(data, suffix);
     } else if (category === "vehicle") {
       const data = vehicleTx.map(t => ({ ...t, vehicle_number: vehicleNameMap[t.vehicle_id] ?? "" }));
