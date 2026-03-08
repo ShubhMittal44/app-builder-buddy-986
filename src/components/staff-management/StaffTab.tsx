@@ -35,6 +35,7 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const [formSalary, setFormSalary] = useState(0);
   const [formActive, setFormActive] = useState(true);
   const [formNotes, setFormNotes] = useState("");
+  const [formType, setFormType] = useState<StaffType | "">("");
   const [txDate, setTxDate] = useState("");
   const [txAmount, setTxAmount] = useState(0);
   const [txNotes, setTxNotes] = useState("");
