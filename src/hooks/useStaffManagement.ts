@@ -4,6 +4,8 @@ import { toast } from '@/hooks/use-toast';
 import { DateFilters, emptyFilters, getDateRange } from './useDateFilters';
 
 // ---- Types ----
+export type StaffType = 'Shop staff' | 'Godown staff';
+
 export interface StaffMember {
   id: string;
   created_at: string;
@@ -12,6 +14,7 @@ export interface StaffMember {
   monthly_salary: number;
   active: boolean;
   notes: string | null;
+  staff_type: StaffType | null;
 }
 
 export interface StaffTransaction {

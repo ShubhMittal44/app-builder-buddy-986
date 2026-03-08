@@ -18,7 +18,7 @@ import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useStaffMembers, useStaffTransactions, useVehicles, useVehicleTransactions, useOtherEntries, useDistinctServices,
-  StaffMember, StaffTransaction, Vehicle, VehicleTransaction, OtherEntry,
+  StaffMember, StaffTransaction, Vehicle, VehicleTransaction, OtherEntry, StaffType,
 } from "@/hooks/useStaffManagement";
 import { exportStaffMembers, exportStaffTransactions, exportVehicles, exportVehicleTransactions, exportOtherEntries } from "@/utils/exportStaffCSV";
 import { ArrowLeft, RotateCcw, Plus, Pencil, Trash2, FileDown, Settings2, Search } from "lucide-react";
@@ -64,11 +64,17 @@ const StaffManagement = () => {
   const { entries: otherEntries, loading: otherLoading, create: createOther, update: updateOther, remove: removeOther } =
     useOtherEntries(category === "other" ? filters : undefined, category === "other" ? debouncedService : undefined);
 
+  const [staffTypeFilter, setStaffTypeFilter] = useState<StaffType | "">("");
+  const filteredMembers = useMemo(() => {
+    if (!staffTypeFilter) return members;
+    return members.filter(m => m.staff_type === staffTypeFilter);
+  }, [members, staffTypeFilter]);
+
   // ---- Entity selector options ----
   const staffOptions = useMemo(() => [
     { value: "", label: "All Staff" },
-    ...members.map(m => ({ value: m.id, label: m.staff_name })),
-  ], [members]);
+    ...filteredMembers.map(m => ({ value: m.id, label: m.staff_name })),
+  ], [filteredMembers]);
 
   const vehicleOptions = useMemo(() => [
     { value: "", label: "All Vehicles" },
@@ -135,6 +141,7 @@ const StaffManagement = () => {
   const [mSalary, setMSalary] = useState(0);
   const [mActive, setMActive] = useState(true);
   const [mNotes, setMNotes] = useState("");
+  const [mType, setMType] = useState<StaffType | "">("");
 
   const [vehicleDialog, setVehicleDialog] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
@@ -193,12 +200,12 @@ const StaffManagement = () => {
   };
 
   // Entity management
-  const openAddMember = () => { setEditMember(null); setMName(""); setMSalary(0); setMActive(true); setMNotes(""); setStaffMemberDialog(true); };
-  const openEditMember = (m: StaffMember) => { setEditMember(m); setMName(m.staff_name); setMSalary(m.monthly_salary); setMActive(m.active); setMNotes(m.notes ?? ""); setStaffMemberDialog(true); };
+  const openAddMember = () => { setEditMember(null); setMName(""); setMSalary(0); setMActive(true); setMNotes(""); setMType(""); setStaffMemberDialog(true); };
+  const openEditMember = (m: StaffMember) => { setEditMember(m); setMName(m.staff_name); setMSalary(m.monthly_salary); setMActive(m.active); setMNotes(m.notes ?? ""); setMType(m.staff_type ?? ""); setStaffMemberDialog(true); };
   const saveMember = async () => {
     const ok = editMember
-      ? await updateMember(editMember.id, { staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null })
-      : await createMember({ staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null });
+      ? await updateMember(editMember.id, { staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null, staff_type: mType || null })
+      : await createMember({ staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null, staff_type: mType || null });
     if (ok) { setStaffMemberDialog(false); refetchMembers(); }
   };
 
@@ -229,9 +236,11 @@ const StaffManagement = () => {
     clearFilters();
     setEntityId("");
     setServiceSearch("");
+    setStaffTypeFilter("");
   };
 
-  const isAnyFilter = hasFilters || entityId !== "" || serviceSearch !== "";
+
+  const isAnyFilter = hasFilters || entityId !== "" || serviceSearch !== "" || staffTypeFilter !== "";
   const isLoading = category === "staff" ? staffTxLoading : category === "vehicle" ? vehicleTxLoading : otherLoading;
 
   if (!isAdmin) return null;
@@ -302,17 +311,31 @@ const StaffManagement = () => {
             {/* Entity selector */}
             <div className="flex flex-wrap items-end gap-3">
               {category === "staff" && (
-                <div className="flex flex-col gap-1 min-w-[200px]">
-                  <Label className="text-xs">Staff Name</Label>
-                  <SearchableSelect
-                    value={entityId}
-                    onValueChange={v => setEntityId(v)}
-                    options={staffOptions}
-                    placeholder="All Staff"
-                    searchPlaceholder="Search staff..."
-                    className="h-9"
-                  />
-                </div>
+                <>
+                  <div className="flex flex-col gap-1 min-w-[150px]">
+                    <Label className="text-xs">Type</Label>
+                    <select
+                      value={staffTypeFilter}
+                      onChange={e => { setStaffTypeFilter(e.target.value as StaffType | ""); setEntityId(""); }}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                    >
+                      <option value="">All</option>
+                      <option value="Shop staff">Shop staff</option>
+                      <option value="Godown staff">Godown staff</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-[200px]">
+                    <Label className="text-xs">Staff Name</Label>
+                    <SearchableSelect
+                      value={entityId}
+                      onValueChange={v => setEntityId(v)}
+                      options={staffOptions}
+                      placeholder="All Staff"
+                      searchPlaceholder="Search staff..."
+                      className="h-9"
+                    />
+                  </div>
+                </>
               )}
               {category === "vehicle" && (
                 <div className="flex flex-col gap-1 min-w-[200px]">
@@ -602,15 +625,16 @@ const StaffManagement = () => {
               </div>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Name</TableHead><TableHead>Salary</TableHead><TableHead>Active</TableHead><TableHead className="w-20"></TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {members.map(m => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.staff_name}</TableCell>
-                      <TableCell>{formatINR(m.monthly_salary)}</TableCell>
-                      <TableCell>{m.active ? "✅" : "❌"}</TableCell>
-                      <TableCell>
+                <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Salary</TableHead><TableHead>Active</TableHead><TableHead className="w-20"></TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {members.map(m => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">{m.staff_name}</TableCell>
+                    <TableCell className="text-xs">{m.staff_type ?? "—"}</TableCell>
+                    <TableCell>{formatINR(m.monthly_salary)}</TableCell>
+                    <TableCell>{m.active ? "✅" : "❌"}</TableCell>
+                    <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditMember(m)}><Pencil className="w-3.5 h-3.5" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setDeleteMemberId(m.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -663,6 +687,18 @@ const StaffManagement = () => {
           <DialogHeader><DialogTitle>{editMember ? "Edit Staff" : "Add Staff"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={mName} onChange={e => setMName(e.target.value)} /></div>
+            <div>
+              <Label>Type *</Label>
+              <select
+                value={mType}
+                onChange={e => setMType(e.target.value as StaffType | "")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Select type...</option>
+                <option value="Shop staff">Shop staff</option>
+                <option value="Godown staff">Godown staff</option>
+              </select>
+            </div>
             <div><Label>Monthly Salary *</Label><CurrencyInput value={mSalary} onChange={setMSalary} /></div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={mActive} onChange={e => setMActive(e.target.checked)} id="sm-active" />
@@ -672,7 +708,7 @@ const StaffManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStaffMemberDialog(false)}>Cancel</Button>
-            <Button onClick={saveMember} disabled={!mName || mSalary <= 0}>Save</Button>
+            <Button onClick={saveMember} disabled={!mName || mSalary <= 0 || !mType}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

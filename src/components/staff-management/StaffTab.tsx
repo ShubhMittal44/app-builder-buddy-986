@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useStaffMembers, useStaffTransactions, StaffMember, StaffTransaction } from "@/hooks/useStaffManagement";
+import { useStaffMembers, useStaffTransactions, StaffMember, StaffTransaction, StaffType } from "@/hooks/useStaffManagement";
 import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,7 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const [formSalary, setFormSalary] = useState(0);
   const [formActive, setFormActive] = useState(true);
   const [formNotes, setFormNotes] = useState("");
+  const [formType, setFormType] = useState<StaffType | "">("");
   const [txDate, setTxDate] = useState("");
   const [txAmount, setTxAmount] = useState(0);
   const [txNotes, setTxNotes] = useState("");
@@ -48,12 +49,12 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
   const selectedMember = members.find(m => m.id === selectedId);
   const totalMoneyTaken = useMemo(() => transactions.reduce((s, t) => s + Number(t.money_taken), 0), [transactions]);
 
-  const openAddMember = () => { setEditMember(null); setFormName(""); setFormSalary(0); setFormActive(true); setFormNotes(""); setMemberDialog(true); };
-  const openEditMember = (m: StaffMember) => { setEditMember(m); setFormName(m.staff_name); setFormSalary(m.monthly_salary); setFormActive(m.active); setFormNotes(m.notes ?? ""); setMemberDialog(true); };
+  const openAddMember = () => { setEditMember(null); setFormName(""); setFormSalary(0); setFormActive(true); setFormNotes(""); setFormType(""); setMemberDialog(true); };
+  const openEditMember = (m: StaffMember) => { setEditMember(m); setFormName(m.staff_name); setFormSalary(m.monthly_salary); setFormActive(m.active); setFormNotes(m.notes ?? ""); setFormType(m.staff_type ?? ""); setMemberDialog(true); };
   const saveMember = async () => {
     const ok = editMember
-      ? await update(editMember.id, { staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null })
-      : await create({ staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null });
+      ? await update(editMember.id, { staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null, staff_type: formType || null })
+      : await create({ staff_name: formName, monthly_salary: formSalary, active: formActive, notes: formNotes || null, staff_type: formType || null });
     if (ok) setMemberDialog(false);
   };
 
@@ -95,16 +96,18 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Salary</TableHead>
               <TableHead>Active</TableHead>
               <TableHead className="w-20">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No staff members</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No staff members</TableCell></TableRow>
               ) : filtered.map(m => (
                 <TableRow key={m.id} className={`cursor-pointer ${selectedId === m.id ? 'bg-muted' : ''}`} onClick={() => setSelectedId(m.id)}>
                   <TableCell className="font-medium">{m.staff_name}</TableCell>
+                  <TableCell className="text-xs">{m.staff_type ?? "—"}</TableCell>
                   <TableCell>{formatINR(m.monthly_salary)}</TableCell>
                   <TableCell>{m.active ? "✅" : "❌"}</TableCell>
                   <TableCell>
@@ -187,6 +190,18 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           <DialogHeader><DialogTitle>{editMember ? "Edit Staff" : "Add Staff"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={formName} onChange={e => setFormName(e.target.value)} /></div>
+            <div>
+              <Label>Type *</Label>
+              <select
+                value={formType}
+                onChange={e => setFormType(e.target.value as StaffType | "")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Select type...</option>
+                <option value="Shop staff">Shop staff</option>
+                <option value="Godown staff">Godown staff</option>
+              </select>
+            </div>
             <div><Label>Monthly Salary *</Label><CurrencyInput value={formSalary} onChange={setFormSalary} /></div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={formActive} onChange={e => setFormActive(e.target.checked)} id="staff-active" />
@@ -196,7 +211,7 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMemberDialog(false)}>Cancel</Button>
-            <Button onClick={saveMember} disabled={!formName || formSalary <= 0}>Save</Button>
+            <Button onClick={saveMember} disabled={!formName || formSalary <= 0 || !formType}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
