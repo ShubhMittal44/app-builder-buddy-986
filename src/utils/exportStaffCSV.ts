@@ -20,8 +20,8 @@ function downloadCsv(csv: string, filename: string) {
 const dateStr = () => new Date().toISOString().split('T')[0];
 
 export function exportStaffMembers(data: any[]) {
-  const headers = ['Staff Name', 'Monthly Salary', 'Active', 'Notes', 'Created At'];
-  const rows = data.map(d => toCsvRow([d.staff_name, d.monthly_salary, d.active ? 'Yes' : 'No', d.notes, d.created_at]));
+  const headers = ['Staff Name', 'Type', 'Monthly Salary', 'Active', 'Notes', 'Created At'];
+  const rows = data.map(d => toCsvRow([d.staff_name, d.staff_type ?? '', d.monthly_salary, d.active ? 'Yes' : 'No', d.notes, d.created_at]));
   downloadCsv([headers.join(','), ...rows].join('\n'), `staff_members_${dateStr()}.csv`);
 }
 

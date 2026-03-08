@@ -708,7 +708,7 @@ const StaffManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStaffMemberDialog(false)}>Cancel</Button>
-            <Button onClick={saveMember} disabled={!mName || mSalary <= 0}>Save</Button>
+            <Button onClick={saveMember} disabled={!mName || mSalary <= 0 || !mType}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
