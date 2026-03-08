@@ -86,8 +86,15 @@ const StaffManagement = () => {
     ...distinctServices.map(s => ({ value: s, label: s })),
   ], [distinctServices]);
 
+  // Filter transactions by staff type when "All Staff" is selected but type filter is active
+  const filteredStaffTx = useMemo(() => {
+    if (!staffTypeFilter || entityId) return staffTx;
+    const filteredIds = new Set(filteredMembers.map(m => m.id));
+    return staffTx.filter(t => filteredIds.has(t.staff_id));
+  }, [staffTx, staffTypeFilter, entityId, filteredMembers]);
+
   // ---- Summary ----
-  const staffTotal = useMemo(() => staffTx.reduce((s, t) => s + Number(t.money_taken), 0), [staffTx]);
+  const staffTotal = useMemo(() => filteredStaffTx.reduce((s, t) => s + Number(t.money_taken), 0), [filteredStaffTx]);
   const vehicleTotal = useMemo(() => vehicleTx.reduce((s, t) => s + Number(t.amount), 0), [vehicleTx]);
   const otherTotal = useMemo(() => otherEntries.reduce((s, e) => s + Number(e.amount), 0), [otherEntries]);
 
