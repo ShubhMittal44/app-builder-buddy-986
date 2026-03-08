@@ -190,6 +190,18 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           <DialogHeader><DialogTitle>{editMember ? "Edit Staff" : "Add Staff"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={formName} onChange={e => setFormName(e.target.value)} /></div>
+            <div>
+              <Label>Type *</Label>
+              <select
+                value={formType}
+                onChange={e => setFormType(e.target.value as StaffType | "")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Select type...</option>
+                <option value="Shop staff">Shop staff</option>
+                <option value="Godown staff">Godown staff</option>
+              </select>
+            </div>
             <div><Label>Monthly Salary *</Label><CurrencyInput value={formSalary} onChange={setFormSalary} /></div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={formActive} onChange={e => setFormActive(e.target.checked)} id="staff-active" />
@@ -199,7 +211,7 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMemberDialog(false)}>Cancel</Button>
-            <Button onClick={saveMember} disabled={!formName || formSalary <= 0}>Save</Button>
+            <Button onClick={saveMember} disabled={!formName || formSalary <= 0 || !formType}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
