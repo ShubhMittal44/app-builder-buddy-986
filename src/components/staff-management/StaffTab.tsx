@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useStaffMembers, useStaffTransactions, StaffMember, StaffTransaction } from "@/hooks/useStaffManagement";
+import { useStaffMembers, useStaffTransactions, StaffMember, StaffTransaction, StaffType } from "@/hooks/useStaffManagement";
 import { useDateFilters, filterSuffix } from "@/hooks/useDateFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
