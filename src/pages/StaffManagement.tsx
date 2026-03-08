@@ -64,6 +64,12 @@ const StaffManagement = () => {
   const { entries: otherEntries, loading: otherLoading, create: createOther, update: updateOther, remove: removeOther } =
     useOtherEntries(category === "other" ? filters : undefined, category === "other" ? debouncedService : undefined);
 
+  // Filter members by staff_type
+  const filteredMembers = useMemo(() => {
+    if (!staffTypeFilter) return members;
+    return members.filter(m => m.staff_type === staffTypeFilter);
+  }, [members, staffTypeFilter]);
+
   // ---- Entity selector options ----
   const staffOptions = useMemo(() => [
     { value: "", label: "All Staff" },
