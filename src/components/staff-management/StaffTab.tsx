@@ -96,16 +96,18 @@ export function StaffTab({ defaultDate }: { defaultDate: string }) {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Salary</TableHead>
               <TableHead>Active</TableHead>
               <TableHead className="w-20">Actions</TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No staff members</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No staff members</TableCell></TableRow>
               ) : filtered.map(m => (
                 <TableRow key={m.id} className={`cursor-pointer ${selectedId === m.id ? 'bg-muted' : ''}`} onClick={() => setSelectedId(m.id)}>
                   <TableCell className="font-medium">{m.staff_name}</TableCell>
+                  <TableCell className="text-xs">{m.staff_type ?? "—"}</TableCell>
                   <TableCell>{formatINR(m.monthly_salary)}</TableCell>
                   <TableCell>{m.active ? "✅" : "❌"}</TableCell>
                   <TableCell>
