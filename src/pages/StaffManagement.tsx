@@ -687,6 +687,18 @@ const StaffManagement = () => {
           <DialogHeader><DialogTitle>{editMember ? "Edit Staff" : "Add Staff"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div><Label>Name *</Label><Input value={mName} onChange={e => setMName(e.target.value)} /></div>
+            <div>
+              <Label>Type *</Label>
+              <select
+                value={mType}
+                onChange={e => setMType(e.target.value as StaffType | "")}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="">Select type...</option>
+                <option value="Shop staff">Shop staff</option>
+                <option value="Godown staff">Godown staff</option>
+              </select>
+            </div>
             <div><Label>Monthly Salary *</Label><CurrencyInput value={mSalary} onChange={setMSalary} /></div>
             <div className="flex items-center gap-2">
               <input type="checkbox" checked={mActive} onChange={e => setMActive(e.target.checked)} id="sm-active" />
