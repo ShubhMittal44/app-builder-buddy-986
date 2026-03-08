@@ -382,7 +382,7 @@ const StaffManagement = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              {category === "staff" && <SummaryStrip label="Total Money Taken" total={staffTotal} count={staffTx.length} formatINR={formatINR} />}
+              {category === "staff" && <SummaryStrip label="Total Money Taken" total={staffTotal} count={filteredStaffTx.length} formatINR={formatINR} />}
               {category === "vehicle" && <SummaryStrip label="Total Vehicle Expense" total={vehicleTotal} count={vehicleTx.length} formatINR={formatINR} />}
               {category === "other" && <SummaryStrip label="Total Misc Amount" total={otherTotal} count={otherEntries.length} formatINR={formatINR} />}
             </div>
