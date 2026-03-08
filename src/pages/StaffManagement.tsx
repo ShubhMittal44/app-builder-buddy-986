@@ -142,7 +142,6 @@ const StaffManagement = () => {
   const [mActive, setMActive] = useState(true);
   const [mNotes, setMNotes] = useState("");
   const [mType, setMType] = useState<StaffType | "">("");
-  const [staffTypeFilter, setStaffTypeFilter] = useState<StaffType | "">("");
 
   const [vehicleDialog, setVehicleDialog] = useState(false);
   const [editVehicle, setEditVehicle] = useState<Vehicle | null>(null);
