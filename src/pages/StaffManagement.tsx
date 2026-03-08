@@ -625,15 +625,16 @@ const StaffManagement = () => {
               </div>
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Name</TableHead><TableHead>Salary</TableHead><TableHead>Active</TableHead><TableHead className="w-20"></TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {members.map(m => (
-                    <TableRow key={m.id}>
-                      <TableCell className="font-medium">{m.staff_name}</TableCell>
-                      <TableCell>{formatINR(m.monthly_salary)}</TableCell>
-                      <TableCell>{m.active ? "✅" : "❌"}</TableCell>
-                      <TableCell>
+                <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Salary</TableHead><TableHead>Active</TableHead><TableHead className="w-20"></TableHead>
+              </TableRow></TableHeader>
+              <TableBody>
+                {members.map(m => (
+                  <TableRow key={m.id}>
+                    <TableCell className="font-medium">{m.staff_name}</TableCell>
+                    <TableCell className="text-xs">{m.staff_type ?? "—"}</TableCell>
+                    <TableCell>{formatINR(m.monthly_salary)}</TableCell>
+                    <TableCell>{m.active ? "✅" : "❌"}</TableCell>
+                    <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" onClick={() => openEditMember(m)}><Pencil className="w-3.5 h-3.5" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => setDeleteMemberId(m.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
