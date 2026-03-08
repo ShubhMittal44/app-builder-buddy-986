@@ -195,12 +195,12 @@ const StaffManagement = () => {
   };
 
   // Entity management
-  const openAddMember = () => { setEditMember(null); setMName(""); setMSalary(0); setMActive(true); setMNotes(""); setStaffMemberDialog(true); };
-  const openEditMember = (m: StaffMember) => { setEditMember(m); setMName(m.staff_name); setMSalary(m.monthly_salary); setMActive(m.active); setMNotes(m.notes ?? ""); setStaffMemberDialog(true); };
+  const openAddMember = () => { setEditMember(null); setMName(""); setMSalary(0); setMActive(true); setMNotes(""); setMType(""); setStaffMemberDialog(true); };
+  const openEditMember = (m: StaffMember) => { setEditMember(m); setMName(m.staff_name); setMSalary(m.monthly_salary); setMActive(m.active); setMNotes(m.notes ?? ""); setMType(m.staff_type ?? ""); setStaffMemberDialog(true); };
   const saveMember = async () => {
     const ok = editMember
-      ? await updateMember(editMember.id, { staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null })
-      : await createMember({ staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null });
+      ? await updateMember(editMember.id, { staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null, staff_type: mType || null })
+      : await createMember({ staff_name: mName, monthly_salary: mSalary, active: mActive, notes: mNotes || null, staff_type: mType || null });
     if (ok) { setStaffMemberDialog(false); refetchMembers(); }
   };
 
