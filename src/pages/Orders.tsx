@@ -434,6 +434,10 @@ const Orders = () => {
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
                 </Button>
+                <Button variant="outline" aria-label="Download Notes PDF" onClick={handleDownloadNotesPdf} disabled={notesPdfLoading}>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  {notesPdfLoading ? 'Generating…' : 'Notes PDF'}
+                </Button>
               </div>
             </CardContent>
           </Card>
