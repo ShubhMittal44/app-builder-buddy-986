@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.admin-bulk-delete-orders]
 verify_jwt = true
+
+[functions.open-orders-notes-pdf]
+verify_jwt = false

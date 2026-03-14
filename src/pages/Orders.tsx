@@ -72,6 +72,50 @@ const Orders = () => {
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   
   const { generatePDF, loading: pdfLoading } = useChalanPDF();
+  const [notesPdfLoading, setNotesPdfLoading] = useState(false);
+
+  const handleDownloadNotesPdf = async () => {
+    setNotesPdfLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Auth required', description: 'You must be logged in', variant: 'destructive' });
+        return;
+      }
+      const resp = await fetch(
+        `https://cqyqjjhfwfydgusavlng.supabase.co/functions/v1/open-orders-notes-pdf`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxeXFqamhmd2Z5ZGd1c2F2bG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIyODUwNDQsImV4cCI6MjA3Nzg2MTA0NH0.piJ3BXC8gy4TArxcT8M5fAH_6AZs1HhusjFtYdqWrYQ',
+          },
+          body: '{}',
+        }
+      );
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed (${resp.status})`);
+      }
+      const blob = await resp.blob();
+      const dateStr = new Date().toISOString().split('T')[0];
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `RGH_Open_Order_Notes_${dateStr}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Downloaded', description: 'Notes PDF downloaded' });
+    } catch (err: any) {
+      console.error('Notes PDF error:', err);
+      toast({ title: 'Error', description: err.message || 'Failed to generate PDF', variant: 'destructive' });
+    } finally {
+      setNotesPdfLoading(false);
+    }
+  };
   
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
@@ -433,6 +477,10 @@ const Orders = () => {
                 <Button variant="outline" aria-label="Export data" onClick={handleExport}>
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
+                </Button>
+                <Button variant="outline" aria-label="Download Notes PDF" onClick={handleDownloadNotesPdf} disabled={notesPdfLoading}>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  {notesPdfLoading ? 'Generating…' : 'Notes PDF'}
                 </Button>
               </div>
             </CardContent>
