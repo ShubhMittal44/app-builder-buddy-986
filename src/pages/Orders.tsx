@@ -103,7 +103,7 @@ const Orders = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `RGH_Open_Order_Notes_${dateStr}.pdf`;
+      a.download = `RGH_Open_Orders_Notes_Chalan_${dateStr}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
