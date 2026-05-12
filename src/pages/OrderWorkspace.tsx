@@ -48,7 +48,7 @@ const OrderWorkspace = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { order, loading, error } = useOrder(id);
-  const { updateOrder, updateStage } = useOrderMutations();
+  const { updateOrder, updateStage, forceCloseOrder } = useOrderMutations();
   const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
   const { notifyOrderUpdate } = useNotifications();
 
