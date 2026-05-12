@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.open-orders-notes-pdf]
 verify_jwt = false
+
+[functions.admin-force-close-order]
+verify_jwt = true

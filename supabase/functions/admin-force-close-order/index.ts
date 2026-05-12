@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     // Verify admin via RLS-protected profiles table
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('role')
+      .select('role, email, display_name')
       .single();
 
     if (profileError || !profile || profile.role !== 'admin') {
@@ -87,9 +87,10 @@ Deno.serve(async (req) => {
 
     // Build updated timeline
     const currentTimeline = Array.isArray(order.timeline) ? order.timeline : [];
+    const userName = profile.display_name || profile.email || 'Unknown';
     const newEntry = {
       timestamp: new Date().toISOString(),
-      user: profile.role,
+      user: userName,
       action: 'Order force closed',
       from_stage: order.stage,
       to_stage: 'closed',
