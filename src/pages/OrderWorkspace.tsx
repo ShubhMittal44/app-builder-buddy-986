@@ -207,6 +207,20 @@ const OrderWorkspace = () => {
     }
   };
 
+  const handleForceClose = async () => {
+    try {
+      await forceCloseOrder(order.id, order);
+      setShowForceCloseDialog(false);
+      toast({
+        title: "Order closed",
+        description: "The order has been force closed.",
+      });
+    } catch (err) {
+      console.error("Failed to force close order:", err);
+      setShowForceCloseDialog(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!customerName.trim()) {
       toast({
