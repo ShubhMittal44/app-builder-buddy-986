@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, ChevronRight, FileIcon, Download, X, Trash2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ const OrderWorkspace = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { order, loading, error } = useOrder(id);
-  const { updateOrder, updateStage } = useOrderMutations();
+  const { updateOrder, updateStage, forceCloseOrder } = useOrderMutations();
   const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
   const { notifyOrderUpdate } = useNotifications();
 
@@ -66,6 +66,7 @@ const OrderWorkspace = () => {
   const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
   const [files, setFiles] = useState<File[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -203,6 +204,20 @@ const OrderWorkspace = () => {
     } catch (err) {
       console.error("Failed to close order:", err);
       setShowCloseDialog(false);
+    }
+  };
+
+  const handleForceClose = async () => {
+    try {
+      await forceCloseOrder(order.id, order);
+      setShowForceCloseDialog(false);
+      toast({
+        title: "Order closed",
+        description: "The order has been force closed.",
+      });
+    } catch (err) {
+      console.error("Failed to force close order:", err);
+      setShowForceCloseDialog(false);
     }
   };
 
@@ -451,11 +466,22 @@ const OrderWorkspace = () => {
                         {getNextStageLabel()}
                         <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
-                        {!canMoveToNextStage() && (
+                      {!canMoveToNextStage() && (
                         <p className="text-sm text-destructive">
                           {order.stage === "assign_site" && "Please select assign site"}
                           {order.stage === "processing" && "Please select processing"}
                         </p>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowForceCloseDialog(true)}
+                          className="mt-2 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <AlertTriangle className="w-4 h-4 mr-2" />
+                          Close Order Now
+                        </Button>
                       )}
                     </div>
                   )}
@@ -790,6 +816,27 @@ const OrderWorkspace = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleCloseOrder}>
               Close Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Force Close Order Dialog */}
+      <AlertDialog open={showForceCloseDialog} onOpenChange={setShowForceCloseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close this order now?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the order as Closed immediately and skip remaining stages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm Close
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

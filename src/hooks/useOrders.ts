@@ -282,5 +282,45 @@ export const useOrderMutations = () => {
     }
   };
 
-  return { createOrder, updateOrder, updateStage, deleteOrder };
+  const forceCloseOrder = async (id: string, currentOrder: Order) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to perform this action',
+          variant: 'destructive',
+        });
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('admin-force-close-order', {
+        body: { order_id: id },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      const result = data as any;
+
+      toast({
+        title: 'Order closed',
+        description: result.message || `Order force closed successfully`,
+      });
+
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to force close order';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  return { createOrder, updateOrder, updateStage, deleteOrder, forceCloseOrder };
 };
