@@ -66,6 +66,7 @@ const OrderWorkspace = () => {
   const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
   const [files, setFiles] = useState<File[]>([]);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [showForceCloseDialog, setShowForceCloseDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
