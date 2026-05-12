@@ -821,6 +821,27 @@ const OrderWorkspace = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Force Close Order Dialog */}
+      <AlertDialog open={showForceCloseDialog} onOpenChange={setShowForceCloseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close this order now?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the order as Closed immediately and skip remaining stages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleForceClose}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm Close
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Delete Order Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
