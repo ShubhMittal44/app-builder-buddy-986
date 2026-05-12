@@ -466,11 +466,22 @@ const OrderWorkspace = () => {
                         {getNextStageLabel()}
                         <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
-                        {!canMoveToNextStage() && (
+                      {!canMoveToNextStage() && (
                         <p className="text-sm text-destructive">
                           {order.stage === "assign_site" && "Please select assign site"}
                           {order.stage === "processing" && "Please select processing"}
                         </p>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowForceCloseDialog(true)}
+                          className="mt-2 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <AlertTriangle className="w-4 h-4 mr-2" />
+                          Close Order Now
+                        </Button>
                       )}
                     </div>
                   )}
