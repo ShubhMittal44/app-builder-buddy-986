@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     if (deleteError) {
       console.error('Bulk order deletion error:', deleteError);
       return new Response(
-        JSON.stringify({ error: 'Failed to delete orders', details: deleteError.message }),
+        JSON.stringify({ error: 'Failed to delete orders' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Unexpected bulk delete error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
