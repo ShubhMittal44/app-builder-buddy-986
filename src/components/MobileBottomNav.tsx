@@ -10,9 +10,10 @@ export const MobileBottomNav = () => {
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
     { icon: ClipboardList, label: "Orders", path: "/orders" },
-    { icon: Plus, label: "Add Order", path: "/new" },
+    { icon: Plus, label: "Add", path: "/new" },
     
     ...(isAdmin ? [{ icon: Briefcase, label: "Staff", path: "/admin/staff-management" }] : []),
+    ...(isAdmin ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
     ...(isAdmin ? [{ icon: BookOpen, label: "DayBook", path: "/admin/daybook" }] : []),
   ];
 
