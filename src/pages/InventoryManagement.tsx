@@ -55,6 +55,7 @@ const InventoryManagement = () => {
   const [deleteVariantId, setDeleteVariantId] = useState<string | null>(null);
   const [vThickness, setVThickness] = useState("");
   const [vCompany, setVCompany] = useState("");
+  const [vColor, setVColor] = useState("");
   const [vNotes, setVNotes] = useState("");
 
   // ---- Stock item dialog ----
@@ -96,7 +97,7 @@ const InventoryManagement = () => {
             (i.comment ?? "").toLowerCase().includes(q)
           );
         });
-        const variantTextMatch = !q || v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
+        const variantTextMatch = !q || v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
         const filtersActive = unitFilter || companyFilter || thicknessFilter;
         if (filtersActive) return unitFilter ? itemMatch : (variantTextMatch || itemMatch);
         return variantTextMatch || itemMatch;
@@ -112,7 +113,7 @@ const InventoryManagement = () => {
       if (companyFilter && v.company_purchased !== companyFilter) return false;
       if (thicknessFilter && v.thickness !== thicknessFilter) return false;
       if (!q) return true;
-      return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
+      return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
     });
   }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q]);
 
@@ -143,13 +144,13 @@ const InventoryManagement = () => {
   };
 
   // ---- Variant handlers ----
-  const openAddVariant = () => { setEditVariant(null); setVThickness(""); setVCompany(""); setVNotes(""); setVariantDialog(true); };
-  const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVNotes(v.notes ?? ""); setVariantDialog(true); };
+  const openAddVariant = () => { setEditVariant(null); setVThickness(""); setVCompany("General"); setVColor(""); setVNotes(""); setVariantDialog(true); };
+  const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVColor(v.color ?? ""); setVNotes(v.notes ?? ""); setVariantDialog(true); };
   const saveVariant = async () => {
     if (!vThickness.trim() || !vCompany.trim() || !activeTypeId) return;
     const ok = editVariant
-      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), notes: vNotes.trim() || null })
-      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), notes: vNotes.trim() || null });
+      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
+      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
     if (ok) setVariantDialog(false);
   };
 
@@ -326,6 +327,7 @@ const InventoryManagement = () => {
                     <TableRow>
                       <TableHead>Thickness</TableHead>
                       <TableHead>Company Purchased</TableHead>
+                      <TableHead>Color</TableHead>
                       <TableHead className="text-right">Total Sheets</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -333,12 +335,13 @@ const InventoryManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {typeVariants.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
                     )}
                     {typeVariants.map(v => (
                       <TableRow key={v.id} className="cursor-pointer" onClick={() => openVariant(v.id)}>
                         <TableCell className="font-medium">{v.thickness}</TableCell>
                         <TableCell>{v.company_purchased}</TableCell>
+                        <TableCell>{v.color?.trim() ? v.color : "—"}</TableCell>
                         <TableCell className="text-right font-semibold">{sheetsByVariant[v.id] ?? 0}</TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
@@ -362,6 +365,7 @@ const InventoryManagement = () => {
                       <span className="font-semibold">{v.thickness} · {v.company_purchased}</span>
                       <Badge variant="secondary">{sheetsByVariant[v.id] ?? 0} sheets</Badge>
                     </div>
+                    <p className="text-xs text-muted-foreground">Color: {v.color?.trim() ? v.color : "—"}</p>
                     {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openVariant(v.id)}>View Sizes</Button>
@@ -462,8 +466,9 @@ const InventoryManagement = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editVariant ? "Edit Variant" : "Add Thickness + Company"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Thickness *</Label><Input value={vThickness} onChange={e => setVThickness(e.target.value)} placeholder="e.g. 5mm" /></div>
-            <div><Label>Company Purchased *</Label><Input value={vCompany} onChange={e => setVCompany(e.target.value)} placeholder="e.g. Saint Gobain" /></div>
+            <div><Label>Thickness *</Label><Input value={vThickness} onChange={e => setVThickness(e.target.value)} placeholder="e.g. 5 mm" /></div>
+            <div><Label>Company Purchased *</Label><Input value={vCompany} onChange={e => setVCompany(e.target.value)} placeholder="e.g. Saint Gobain or General" /></div>
+            <div><Label>Color</Label><Input value={vColor} onChange={e => setVColor(e.target.value)} placeholder="Optional — e.g. Clear, Brown, Grey" /></div>
             <div><Label>Notes</Label><Textarea value={vNotes} onChange={e => setVNotes(e.target.value)} /></div>
           </div>
           <DialogFooter>
@@ -581,7 +586,8 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
   const describe = (e: typeof entries[number]) => {
     const typeName = e.glass_type_id ? typeNameById[e.glass_type_id] : "";
     const v = e.glass_variant_id ? variantById[e.glass_variant_id] : undefined;
-    const parts = [typeName, v ? `${v.thickness} ${v.company_purchased}` : ""].filter(Boolean);
+    const variantLabel = v ? `${v.thickness} ${v.company_purchased}${v.color?.trim() ? ` · ${v.color}` : ""}` : "";
+    const parts = [typeName, variantLabel].filter(Boolean);
     let detail = parts.join(" → ");
     if (e.action_type === "updated_stock_item" && e.old_value && e.new_value) {
       detail += ` — ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit}, sheets ${e.old_value.number_of_sheets} → ${e.new_value.number_of_sheets}`;
@@ -589,6 +595,14 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       detail += ` — ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit}, ${e.new_value.number_of_sheets} sheets`;
     } else if (e.action_type === "deleted_stock_item" && e.old_value) {
       detail += ` — ${e.old_value.length}×${e.old_value.breadth} ${e.old_value.unit}`;
+    } else if (e.action_type === "updated_variant" && e.old_value && e.new_value) {
+      const oldColor = (e.old_value.color ?? "").trim();
+      const newColor = (e.new_value.color ?? "").trim();
+      if (oldColor !== newColor) {
+        detail += ` — color changed from ${oldColor || "blank"} to ${newColor || "blank"}`;
+      }
+    } else if (e.action_type === "created_variant" && e.new_value?.color?.trim()) {
+      detail += ` — color ${e.new_value.color}`;
     }
     return detail;
   };

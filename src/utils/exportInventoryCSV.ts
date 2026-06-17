@@ -21,7 +21,7 @@ function downloadCsv(csv: string, filename: string) {
 
 const dateStr = () => new Date().toISOString().split('T')[0];
 
-const INVENTORY_HEADERS = ['Glass Type', 'Thickness', 'Company', 'Length', 'Breadth', 'Unit', 'Number of Sheets', 'Comment'];
+const INVENTORY_HEADERS = ['Glass Type', 'Thickness', 'Company', 'Color', 'Length', 'Breadth', 'Unit', 'Number of Sheets', 'Comment'];
 
 function buildInventoryRows(
   types: GlassType[],
@@ -45,6 +45,7 @@ function buildInventoryRows(
         t?.glass_type_name ?? '',
         v?.thickness ?? '',
         v?.company_purchased ?? '',
+        v?.color ?? '',
         i.length, i.breadth, i.unit, i.number_of_sheets, i.comment,
       ]));
     });
@@ -68,7 +69,7 @@ export function exportActivityLog(
   variantById: Record<string, GlassVariant>,
   userNameById: Record<string, string>,
 ) {
-  const headers = ['Date/Time', 'Action', 'Glass Type', 'Thickness', 'Company', 'Comment', 'Old Value', 'New Value', 'Changed By'];
+  const headers = ['Date/Time', 'Action', 'Glass Type', 'Thickness', 'Company', 'Color', 'Comment', 'Old Value', 'New Value', 'Changed By'];
   const rows = entries.map(e => {
     const v = e.glass_variant_id ? variantById[e.glass_variant_id] : undefined;
     const typeName = e.glass_type_id ? (typeNameById[e.glass_type_id] ?? '') : '';
@@ -78,6 +79,7 @@ export function exportActivityLog(
       typeName,
       v?.thickness ?? '',
       v?.company_purchased ?? '',
+      v?.color ?? '',
       e.comment,
       e.old_value ? JSON.stringify(e.old_value) : '',
       e.new_value ? JSON.stringify(e.new_value) : '',

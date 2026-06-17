@@ -155,6 +155,7 @@ export type Database = {
       }
       glass_variants: {
         Row: {
+          color: string | null
           company_purchased: string
           created_at: string
           glass_type_id: string
@@ -164,6 +165,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color?: string | null
           company_purchased: string
           created_at?: string
           glass_type_id: string
@@ -173,6 +175,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color?: string | null
           company_purchased?: string
           created_at?: string
           glass_type_id?: string
