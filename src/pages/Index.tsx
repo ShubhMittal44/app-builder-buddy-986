@@ -92,6 +92,43 @@ const Index = () => {
             </p>
           </div>
 
+          {/* Admin Quick Actions */}
+          {isAdmin && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              <Button asChild variant="default" className="h-auto py-4 flex-col gap-2">
+                <Link to="/admin/inventory">
+                  <Boxes className="w-6 h-6" />
+                  <span>Inventory</span>
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
+                <Link to="/orders">
+                  <ClipboardList className="w-6 h-6" />
+                  <span>Orders</span>
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
+                <Link to="/admin/staff-management">
+                  <Briefcase className="w-6 h-6" />
+                  <span>Staff Mgmt</span>
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
+                <Link to="/admin/daybook">
+                  <BookOpen className="w-6 h-6" />
+                  <span>DayBook</span>
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
+                <Link to="/admin/users">
+                  <UsersIcon className="w-6 h-6" />
+                  <span>Users</span>
+                </Link>
+              </Button>
+            </div>
+          )}
+
+
           {/* Workflow Stages */}
           <Card>
             <CardHeader>
