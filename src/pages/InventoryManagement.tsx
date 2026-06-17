@@ -144,13 +144,13 @@ const InventoryManagement = () => {
   };
 
   // ---- Variant handlers ----
-  const openAddVariant = () => { setEditVariant(null); setVThickness(""); setVCompany(""); setVNotes(""); setVariantDialog(true); };
-  const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVNotes(v.notes ?? ""); setVariantDialog(true); };
+  const openAddVariant = () => { setEditVariant(null); setVThickness(""); setVCompany("General"); setVColor(""); setVNotes(""); setVariantDialog(true); };
+  const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVColor(v.color ?? ""); setVNotes(v.notes ?? ""); setVariantDialog(true); };
   const saveVariant = async () => {
     if (!vThickness.trim() || !vCompany.trim() || !activeTypeId) return;
     const ok = editVariant
-      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), notes: vNotes.trim() || null })
-      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), notes: vNotes.trim() || null });
+      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
+      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
     if (ok) setVariantDialog(false);
   };
 
