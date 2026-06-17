@@ -15,6 +15,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Users from "./pages/Users";
 
 import StaffManagement from "./pages/StaffManagement";
+import InventoryManagement from "./pages/InventoryManagement";
 import DayBook from "./pages/DayBook";
 import NotFound from "./pages/NotFound";
 
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/orders/:id" element={<ProtectedRoute><OrderWorkspace /></ProtectedRoute>} />
             
             <Route path="/admin/staff-management" element={<ProtectedRoute requireAdmin><StaffManagement /></ProtectedRoute>} />
+            <Route path="/admin/inventory" element={<ProtectedRoute requireAdmin><InventoryManagement /></ProtectedRoute>} />
             <Route path="/admin/daybook" element={<ProtectedRoute requireAdmin><DayBook /></ProtectedRoute>} />
             
             {/* Admin-only routes */}
