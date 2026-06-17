@@ -365,6 +365,7 @@ const InventoryManagement = () => {
                       <span className="font-semibold">{v.thickness} · {v.company_purchased}</span>
                       <Badge variant="secondary">{sheetsByVariant[v.id] ?? 0} sheets</Badge>
                     </div>
+                    <p className="text-xs text-muted-foreground">Color: {v.color?.trim() ? v.color : "—"}</p>
                     {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openVariant(v.id)}>View Sizes</Button>
