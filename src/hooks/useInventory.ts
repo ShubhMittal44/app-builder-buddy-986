@@ -29,6 +29,7 @@ export interface GlassVariant {
   glass_type_id: string;
   thickness: string;
   company_purchased: string;
+  color: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
