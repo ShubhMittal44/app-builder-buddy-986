@@ -498,9 +498,9 @@ const InventoryManagement = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editVariant ? "Edit Variant" : "Add Thickness + Company"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Thickness *</Label><Input value={vThickness} onChange={e => setVThickness(e.target.value)} placeholder="e.g. 5 mm" /></div>
-            <div><Label>Company Purchased *</Label><Input value={vCompany} onChange={e => setVCompany(e.target.value)} placeholder="e.g. Saint Gobain or General" /></div>
-            <div><Label>Color</Label><Input value={vColor} onChange={e => setVColor(e.target.value)} placeholder="Optional — e.g. Clear, Brown, Grey" /></div>
+            <div><Label>Thickness *</Label><ComboboxInput value={vThickness} onChange={setVThickness} options={thicknessOptions} placeholder="e.g. 5 mm" /></div>
+            <div><Label>Company Purchased *</Label><ComboboxInput value={vCompany} onChange={setVCompany} options={companyOptions} placeholder="e.g. Saint Gobain or General" /></div>
+            <div><Label>Color</Label><ComboboxInput value={vColor} onChange={setVColor} options={colorOptions} placeholder="Optional — e.g. Clear, Brown, Grey" /></div>
             <div><Label>Notes</Label><Textarea value={vNotes} onChange={e => setVNotes(e.target.value)} /></div>
           </div>
           <DialogFooter>
