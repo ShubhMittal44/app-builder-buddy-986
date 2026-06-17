@@ -85,6 +85,173 @@ export type Database = {
           },
         ]
       }
+      glass_stock_items: {
+        Row: {
+          breadth: number
+          comment: string | null
+          created_at: string
+          glass_variant_id: string
+          id: string
+          length: number
+          number_of_sheets: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          breadth: number
+          comment?: string | null
+          created_at?: string
+          glass_variant_id: string
+          id?: string
+          length: number
+          number_of_sheets?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          breadth?: number
+          comment?: string | null
+          created_at?: string
+          glass_variant_id?: string
+          id?: string
+          length?: number
+          number_of_sheets?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glass_stock_items_glass_variant_id_fkey"
+            columns: ["glass_variant_id"]
+            isOneToOne: false
+            referencedRelation: "glass_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glass_types: {
+        Row: {
+          created_at: string
+          glass_type_name: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          glass_type_name: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          glass_type_name?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      glass_variants: {
+        Row: {
+          company_purchased: string
+          created_at: string
+          glass_type_id: string
+          id: string
+          notes: string | null
+          thickness: string
+          updated_at: string
+        }
+        Insert: {
+          company_purchased: string
+          created_at?: string
+          glass_type_id: string
+          id?: string
+          notes?: string | null
+          thickness: string
+          updated_at?: string
+        }
+        Update: {
+          company_purchased?: string
+          created_at?: string
+          glass_type_id?: string
+          id?: string
+          notes?: string | null
+          thickness?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glass_variants_glass_type_id_fkey"
+            columns: ["glass_type_id"]
+            isOneToOne: false
+            referencedRelation: "glass_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_activity_log: {
+        Row: {
+          action_type: string
+          changed_at: string
+          changed_by: string | null
+          comment: string | null
+          glass_stock_item_id: string | null
+          glass_type_id: string | null
+          glass_variant_id: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+        }
+        Insert: {
+          action_type: string
+          changed_at?: string
+          changed_by?: string | null
+          comment?: string | null
+          glass_stock_item_id?: string | null
+          glass_type_id?: string | null
+          glass_variant_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Update: {
+          action_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          comment?: string | null
+          glass_stock_item_id?: string | null
+          glass_type_id?: string | null
+          glass_variant_id?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_activity_log_glass_stock_item_id_fkey"
+            columns: ["glass_stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "glass_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_activity_log_glass_type_id_fkey"
+            columns: ["glass_type_id"]
+            isOneToOne: false
+            referencedRelation: "glass_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_activity_log_glass_variant_id_fkey"
+            columns: ["glass_variant_id"]
+            isOneToOne: false
+            referencedRelation: "glass_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           address: string | null
