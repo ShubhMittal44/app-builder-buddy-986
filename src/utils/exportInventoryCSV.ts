@@ -69,7 +69,7 @@ export function exportActivityLog(
   variantById: Record<string, GlassVariant>,
   userNameById: Record<string, string>,
 ) {
-  const headers = ['Date/Time', 'Action', 'Glass Type', 'Thickness', 'Company', 'Comment', 'Old Value', 'New Value', 'Changed By'];
+  const headers = ['Date/Time', 'Action', 'Glass Type', 'Thickness', 'Company', 'Color', 'Comment', 'Old Value', 'New Value', 'Changed By'];
   const rows = entries.map(e => {
     const v = e.glass_variant_id ? variantById[e.glass_variant_id] : undefined;
     const typeName = e.glass_type_id ? (typeNameById[e.glass_type_id] ?? '') : '';
@@ -79,6 +79,7 @@ export function exportActivityLog(
       typeName,
       v?.thickness ?? '',
       v?.company_purchased ?? '',
+      v?.color ?? '',
       e.comment,
       e.old_value ? JSON.stringify(e.old_value) : '',
       e.new_value ? JSON.stringify(e.new_value) : '',
