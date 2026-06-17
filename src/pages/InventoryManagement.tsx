@@ -327,6 +327,7 @@ const InventoryManagement = () => {
                     <TableRow>
                       <TableHead>Thickness</TableHead>
                       <TableHead>Company Purchased</TableHead>
+                      <TableHead>Color</TableHead>
                       <TableHead className="text-right">Total Sheets</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -334,12 +335,13 @@ const InventoryManagement = () => {
                   </TableHeader>
                   <TableBody>
                     {typeVariants.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
                     )}
                     {typeVariants.map(v => (
                       <TableRow key={v.id} className="cursor-pointer" onClick={() => openVariant(v.id)}>
                         <TableCell className="font-medium">{v.thickness}</TableCell>
                         <TableCell>{v.company_purchased}</TableCell>
+                        <TableCell>{v.color?.trim() ? v.color : "—"}</TableCell>
                         <TableCell className="text-right font-semibold">{sheetsByVariant[v.id] ?? 0}</TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
