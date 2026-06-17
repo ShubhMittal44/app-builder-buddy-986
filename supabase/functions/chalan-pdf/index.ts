@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Error in chalan-pdf function:', error);
     return new Response(
-      JSON.stringify({ error: error?.message || 'Failed to generate PDF' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
