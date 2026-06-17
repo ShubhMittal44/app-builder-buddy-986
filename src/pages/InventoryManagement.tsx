@@ -18,9 +18,17 @@ import {
   GlassType, GlassVariant, GlassStockItem, Unit,
 } from "@/hooks/useInventory";
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
+import { ComboboxInput } from "@/components/ui/combobox-input";
+import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes } from "lucide-react";
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
+
+// Default thickness options always offered in the typeahead.
+const DEFAULT_THICKNESSES = ["3.5 mm", "4 mm", "5 mm", "6 mm", "8 mm", "10 mm", "12 mm", "15 mm", "19 mm"];
+
+// Normalize a value for case/spacing-insensitive comparison.
+const normKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
 
 type View = "types" | "type" | "variant";
 
@@ -74,6 +82,20 @@ const InventoryManagement = () => {
   // ---- Distinct filter options ----
   const companies = useMemo(() => [...new Set(variants.map(v => v.company_purchased))].sort(), [variants]);
   const thicknesses = useMemo(() => [...new Set(variants.map(v => v.thickness))].sort(), [variants]);
+
+  // ---- Reusable typeahead option lists (existing values + defaults) ----
+  const thicknessOptions = useMemo(
+    () => [...new Set([...DEFAULT_THICKNESSES, ...variants.map(v => v.thickness)])],
+    [variants]
+  );
+  const companyOptions = useMemo(
+    () => [...new Set(["General", ...variants.map(v => v.company_purchased)])],
+    [variants]
+  );
+  const colorOptions = useMemo(
+    () => [...new Set(variants.map(v => (v.color ?? "").trim()).filter(Boolean))],
+    [variants]
+  );
 
   const q = search.trim().toLowerCase();
 
@@ -148,6 +170,16 @@ const InventoryManagement = () => {
   const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVColor(v.color ?? ""); setVNotes(v.notes ?? ""); setVariantDialog(true); };
   const saveVariant = async () => {
     if (!vThickness.trim() || !vCompany.trim() || !activeTypeId) return;
+    // Duplicate prevention: same glass type + normalized thickness/company/color.
+    const dupKey = `${normKey(vThickness)}|${normKey(vCompany)}|${normKey(vColor)}`;
+    const duplicate = (variantsByType[activeTypeId] ?? []).some(v =>
+      v.id !== editVariant?.id &&
+      `${normKey(v.thickness)}|${normKey(v.company_purchased)}|${normKey(v.color ?? "")}` === dupKey
+    );
+    if (duplicate) {
+      toast({ title: "Duplicate variant", description: "This thickness/company/color combination already exists for this glass type.", variant: "destructive" });
+      return;
+    }
     const ok = editVariant
       ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
       : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
@@ -466,9 +498,9 @@ const InventoryManagement = () => {
         <DialogContent>
           <DialogHeader><DialogTitle>{editVariant ? "Edit Variant" : "Add Thickness + Company"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Thickness *</Label><Input value={vThickness} onChange={e => setVThickness(e.target.value)} placeholder="e.g. 5 mm" /></div>
-            <div><Label>Company Purchased *</Label><Input value={vCompany} onChange={e => setVCompany(e.target.value)} placeholder="e.g. Saint Gobain or General" /></div>
-            <div><Label>Color</Label><Input value={vColor} onChange={e => setVColor(e.target.value)} placeholder="Optional — e.g. Clear, Brown, Grey" /></div>
+            <div><Label>Thickness *</Label><ComboboxInput value={vThickness} onChange={setVThickness} options={thicknessOptions} placeholder="e.g. 5 mm" /></div>
+            <div><Label>Company Purchased *</Label><ComboboxInput value={vCompany} onChange={setVCompany} options={companyOptions} placeholder="e.g. Saint Gobain or General" /></div>
+            <div><Label>Color</Label><ComboboxInput value={vColor} onChange={setVColor} options={colorOptions} placeholder="Optional — e.g. Clear, Brown, Grey" /></div>
             <div><Label>Notes</Label><Textarea value={vNotes} onChange={e => setVNotes(e.target.value)} /></div>
           </div>
           <DialogFooter>
