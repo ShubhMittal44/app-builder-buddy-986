@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     if (deleteError) {
       console.error('Bulk order deletion error:', deleteError);
       return new Response(
-        JSON.stringify({ error: 'Failed to delete orders', details: deleteError.message }),
+        JSON.stringify({ error: 'Failed to delete orders' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
