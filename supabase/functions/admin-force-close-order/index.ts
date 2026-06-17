@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
     if (updateError) {
       console.error('Force close update error:', updateError);
       return new Response(
-        JSON.stringify({ error: 'Failed to close order', details: updateError.message }),
+        JSON.stringify({ error: 'Failed to close order' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
