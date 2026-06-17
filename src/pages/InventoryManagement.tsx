@@ -83,6 +83,20 @@ const InventoryManagement = () => {
   const companies = useMemo(() => [...new Set(variants.map(v => v.company_purchased))].sort(), [variants]);
   const thicknesses = useMemo(() => [...new Set(variants.map(v => v.thickness))].sort(), [variants]);
 
+  // ---- Reusable typeahead option lists (existing values + defaults) ----
+  const thicknessOptions = useMemo(
+    () => [...new Set([...DEFAULT_THICKNESSES, ...variants.map(v => v.thickness)])],
+    [variants]
+  );
+  const companyOptions = useMemo(
+    () => [...new Set(["General", ...variants.map(v => v.company_purchased)])],
+    [variants]
+  );
+  const colorOptions = useMemo(
+    () => [...new Set(variants.map(v => (v.color ?? "").trim()).filter(Boolean))],
+    [variants]
+  );
+
   const q = search.trim().toLowerCase();
 
   // ---- Filtered glass types (search across everything) ----
