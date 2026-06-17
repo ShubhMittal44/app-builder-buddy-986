@@ -586,7 +586,8 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
   const describe = (e: typeof entries[number]) => {
     const typeName = e.glass_type_id ? typeNameById[e.glass_type_id] : "";
     const v = e.glass_variant_id ? variantById[e.glass_variant_id] : undefined;
-    const parts = [typeName, v ? `${v.thickness} ${v.company_purchased}` : ""].filter(Boolean);
+    const variantLabel = v ? `${v.thickness} ${v.company_purchased}${v.color?.trim() ? ` · ${v.color}` : ""}` : "";
+    const parts = [typeName, variantLabel].filter(Boolean);
     let detail = parts.join(" → ");
     if (e.action_type === "updated_stock_item" && e.old_value && e.new_value) {
       detail += ` — ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit}, sheets ${e.old_value.number_of_sheets} → ${e.new_value.number_of_sheets}`;
@@ -594,6 +595,14 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       detail += ` — ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit}, ${e.new_value.number_of_sheets} sheets`;
     } else if (e.action_type === "deleted_stock_item" && e.old_value) {
       detail += ` — ${e.old_value.length}×${e.old_value.breadth} ${e.old_value.unit}`;
+    } else if (e.action_type === "updated_variant" && e.old_value && e.new_value) {
+      const oldColor = (e.old_value.color ?? "").trim();
+      const newColor = (e.new_value.color ?? "").trim();
+      if (oldColor !== newColor) {
+        detail += ` — color changed from ${oldColor || "blank"} to ${newColor || "blank"}`;
+      }
+    } else if (e.action_type === "created_variant" && e.new_value?.color?.trim()) {
+      detail += ` — color ${e.new_value.color}`;
     }
     return detail;
   };
