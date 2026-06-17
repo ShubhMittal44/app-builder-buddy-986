@@ -151,15 +151,15 @@ export function useInventory() {
   };
 
   // ---- Variant CRUD ----
-  const createVariant = async (payload: { glass_type_id: string; thickness: string; company_purchased: string; notes: string | null }) => {
+  const createVariant = async (payload: { glass_type_id: string; thickness: string; company_purchased: string; color: string | null; notes: string | null }) => {
     const { data, error } = await supabase.from('glass_variants' as any).insert(payload as any).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: payload.glass_type_id, glass_variant_id: (data as any).id, action_type: 'created_variant', new_value: payload });
-    toast({ title: 'Variant added', description: `${payload.thickness} ${payload.company_purchased}` });
+    toast({ title: 'Variant added', description: `${payload.thickness} ${payload.company_purchased}${payload.color ? ` · ${payload.color}` : ''}` });
     await fetchAll(); return true;
   };
 
-  const updateVariant = async (id: string, payload: { thickness: string; company_purchased: string; notes: string | null }) => {
+  const updateVariant = async (id: string, payload: { thickness: string; company_purchased: string; color: string | null; notes: string | null }) => {
     const before = variants.find(v => v.id === id);
     const { error } = await supabase.from('glass_variants' as any).update(payload as any).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
