@@ -18,9 +18,17 @@ import {
   GlassType, GlassVariant, GlassStockItem, Unit,
 } from "@/hooks/useInventory";
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
+import { ComboboxInput } from "@/components/ui/combobox-input";
+import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes } from "lucide-react";
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
+
+// Default thickness options always offered in the typeahead.
+const DEFAULT_THICKNESSES = ["3.5 mm", "4 mm", "5 mm", "6 mm", "8 mm", "10 mm", "12 mm", "15 mm", "19 mm"];
+
+// Normalize a value for case/spacing-insensitive comparison.
+const normKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
 
 type View = "types" | "type" | "variant";
 
