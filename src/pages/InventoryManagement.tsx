@@ -55,6 +55,7 @@ const InventoryManagement = () => {
   const [deleteVariantId, setDeleteVariantId] = useState<string | null>(null);
   const [vThickness, setVThickness] = useState("");
   const [vCompany, setVCompany] = useState("");
+  const [vColor, setVColor] = useState("");
   const [vNotes, setVNotes] = useState("");
 
   // ---- Stock item dialog ----
