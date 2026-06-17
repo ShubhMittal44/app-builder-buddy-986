@@ -113,7 +113,7 @@ const InventoryManagement = () => {
       if (companyFilter && v.company_purchased !== companyFilter) return false;
       if (thicknessFilter && v.thickness !== thicknessFilter) return false;
       if (!q) return true;
-      return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
+      return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
     });
   }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q]);
 
