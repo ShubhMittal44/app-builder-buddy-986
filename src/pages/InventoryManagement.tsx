@@ -97,7 +97,7 @@ const InventoryManagement = () => {
             (i.comment ?? "").toLowerCase().includes(q)
           );
         });
-        const variantTextMatch = !q || v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
+        const variantTextMatch = !q || v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
         const filtersActive = unitFilter || companyFilter || thicknessFilter;
         if (filtersActive) return unitFilter ? itemMatch : (variantTextMatch || itemMatch);
         return variantTextMatch || itemMatch;
