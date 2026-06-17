@@ -21,7 +21,7 @@ function downloadCsv(csv: string, filename: string) {
 
 const dateStr = () => new Date().toISOString().split('T')[0];
 
-const INVENTORY_HEADERS = ['Glass Type', 'Thickness', 'Company', 'Length', 'Breadth', 'Unit', 'Number of Sheets', 'Comment'];
+const INVENTORY_HEADERS = ['Glass Type', 'Thickness', 'Company', 'Color', 'Length', 'Breadth', 'Unit', 'Number of Sheets', 'Comment'];
 
 function buildInventoryRows(
   types: GlassType[],
@@ -45,6 +45,7 @@ function buildInventoryRows(
         t?.glass_type_name ?? '',
         v?.thickness ?? '',
         v?.company_purchased ?? '',
+        v?.color ?? '',
         i.length, i.breadth, i.unit, i.number_of_sheets, i.comment,
       ]));
     });
