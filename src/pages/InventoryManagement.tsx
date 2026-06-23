@@ -87,7 +87,7 @@ const InventoryManagement = () => {
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [iLength, setILength] = useState("");
   const [iBreadth, setIBreadth] = useState("");
-  const [iUnit, setIUnit] = useState<Unit>("ft");
+  const [iUnit, setIUnit] = useState<Unit>("mm");
   const [iSheets, setISheets] = useState("");
   const [iComment, setIComment] = useState("");
 
