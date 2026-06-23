@@ -151,7 +151,7 @@ const InventoryManagement = () => {
     });
   }, [glassTypes, variants, variantsByType, stockItems, q, unitFilter, companyFilter, thicknessFilter]);
 
-  // ---- Variants of active type ----
+  // ---- Variants of active type (sorted by total sheets DESC) ----
   const typeVariants = useMemo(() => {
     const list = (activeTypeId ? variantsByType[activeTypeId] : []) ?? [];
     return list.filter(v => {
@@ -159,16 +159,16 @@ const InventoryManagement = () => {
       if (thicknessFilter && v.thickness !== thicknessFilter) return false;
       if (!q) return true;
       return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
-    });
-  }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q]);
+    }).sort((a, b) => (sheetsByVariant[b.id] ?? 0) - (sheetsByVariant[a.id] ?? 0));
+  }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q, sheetsByVariant]);
 
-  // ---- Stock items of active variant ----
+  // ---- Stock items of active variant (sorted by sheets DESC) ----
   const variantItems = useMemo(() => {
     return stockItems.filter(i => i.glass_variant_id === activeVariantId).filter(i => {
       if (unitFilter && i.unit !== unitFilter) return false;
       if (!q) return true;
       return String(i.length).includes(q) || String(i.breadth).includes(q) || (i.comment ?? "").toLowerCase().includes(q);
-    });
+    }).sort((a, b) => Number(b.number_of_sheets) - Number(a.number_of_sheets));
   }, [stockItems, activeVariantId, unitFilter, q]);
 
   // ---- Navigation ----
