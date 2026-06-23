@@ -111,6 +111,14 @@ const InventoryManagement = () => {
     () => [...new Set(variants.map(v => (v.color ?? "").trim()).filter(Boolean))],
     [variants]
   );
+  const lengthOptions = useMemo(
+    () => [...new Set([...DEFAULT_LENGTHS, ...stockItems.map(i => String(i.length))])],
+    [stockItems]
+  );
+  const breadthOptions = useMemo(
+    () => [...new Set([...DEFAULT_BREADTHS, ...stockItems.map(i => String(i.breadth))])],
+    [stockItems]
+  );
 
   const q = search.trim().toLowerCase();
 
