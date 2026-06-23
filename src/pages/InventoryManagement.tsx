@@ -27,8 +27,23 @@ const UNITS: Unit[] = ["ft", "inch", "mm"];
 // Default thickness options always offered in the typeahead.
 const DEFAULT_THICKNESSES = ["3.5 mm", "4 mm", "5 mm", "6 mm", "8 mm", "10 mm", "12 mm", "15 mm", "19 mm"];
 
+// Default length/breadth options always offered in the typeahead.
+const DEFAULT_LENGTHS = ["8", "7", "6", "5", "4", "3"];
+const DEFAULT_BREADTHS = ["4", "3", "2"];
+
 // Normalize a value for case/spacing-insensitive comparison.
 const normKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
+
+// A bare number entered as thickness defaults to mm (e.g. "12" -> "12 mm").
+const normalizeThickness = (s: string) => {
+  const t = s.trim();
+  if (!t) return t;
+  return /^\d+(\.\d+)?$/.test(t) ? `${t} mm` : t;
+};
+
+// Build a variant label that includes color only when present.
+const variantLabel = (v: { thickness: string; company_purchased: string; color: string | null }) =>
+  [v.thickness, v.company_purchased, v.color?.trim()].filter(Boolean).join(" | ");
 
 type View = "types" | "type" | "variant";
 
