@@ -27,8 +27,23 @@ const UNITS: Unit[] = ["ft", "inch", "mm"];
 // Default thickness options always offered in the typeahead.
 const DEFAULT_THICKNESSES = ["3.5 mm", "4 mm", "5 mm", "6 mm", "8 mm", "10 mm", "12 mm", "15 mm", "19 mm"];
 
+// Default length/breadth options always offered in the typeahead.
+const DEFAULT_LENGTHS = ["8", "7", "6", "5", "4", "3"];
+const DEFAULT_BREADTHS = ["4", "3", "2"];
+
 // Normalize a value for case/spacing-insensitive comparison.
 const normKey = (s: string) => s.trim().toLowerCase().replace(/\s+/g, "");
+
+// A bare number entered as thickness defaults to mm (e.g. "12" -> "12 mm").
+const normalizeThickness = (s: string) => {
+  const t = s.trim();
+  if (!t) return t;
+  return /^\d+(\.\d+)?$/.test(t) ? `${t} mm` : t;
+};
+
+// Build a variant label that includes color only when present.
+const variantLabel = (v: { thickness: string; company_purchased: string; color: string | null }) =>
+  [v.thickness, v.company_purchased, v.color?.trim()].filter(Boolean).join(" | ");
 
 type View = "types" | "type" | "variant";
 
@@ -72,7 +87,7 @@ const InventoryManagement = () => {
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [iLength, setILength] = useState("");
   const [iBreadth, setIBreadth] = useState("");
-  const [iUnit, setIUnit] = useState<Unit>("ft");
+  const [iUnit, setIUnit] = useState<Unit>("mm");
   const [iSheets, setISheets] = useState("");
   const [iComment, setIComment] = useState("");
 
@@ -95,6 +110,14 @@ const InventoryManagement = () => {
   const colorOptions = useMemo(
     () => [...new Set(variants.map(v => (v.color ?? "").trim()).filter(Boolean))],
     [variants]
+  );
+  const lengthOptions = useMemo(
+    () => [...new Set([...DEFAULT_LENGTHS, ...stockItems.map(i => String(i.length))])],
+    [stockItems]
+  );
+  const breadthOptions = useMemo(
+    () => [...new Set([...DEFAULT_BREADTHS, ...stockItems.map(i => String(i.breadth))])],
+    [stockItems]
   );
 
   const q = search.trim().toLowerCase();
@@ -128,7 +151,7 @@ const InventoryManagement = () => {
     });
   }, [glassTypes, variants, variantsByType, stockItems, q, unitFilter, companyFilter, thicknessFilter]);
 
-  // ---- Variants of active type ----
+  // ---- Variants of active type (sorted by total sheets DESC) ----
   const typeVariants = useMemo(() => {
     const list = (activeTypeId ? variantsByType[activeTypeId] : []) ?? [];
     return list.filter(v => {
@@ -136,16 +159,16 @@ const InventoryManagement = () => {
       if (thicknessFilter && v.thickness !== thicknessFilter) return false;
       if (!q) return true;
       return v.thickness.toLowerCase().includes(q) || v.company_purchased.toLowerCase().includes(q) || (v.color ?? "").toLowerCase().includes(q) || (v.notes ?? "").toLowerCase().includes(q);
-    });
-  }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q]);
+    }).sort((a, b) => (sheetsByVariant[b.id] ?? 0) - (sheetsByVariant[a.id] ?? 0));
+  }, [activeTypeId, variantsByType, companyFilter, thicknessFilter, q, sheetsByVariant]);
 
-  // ---- Stock items of active variant ----
+  // ---- Stock items of active variant (sorted by sheets DESC) ----
   const variantItems = useMemo(() => {
     return stockItems.filter(i => i.glass_variant_id === activeVariantId).filter(i => {
       if (unitFilter && i.unit !== unitFilter) return false;
       if (!q) return true;
       return String(i.length).includes(q) || String(i.breadth).includes(q) || (i.comment ?? "").toLowerCase().includes(q);
-    });
+    }).sort((a, b) => Number(b.number_of_sheets) - Number(a.number_of_sheets));
   }, [stockItems, activeVariantId, unitFilter, q]);
 
   // ---- Navigation ----
@@ -170,8 +193,10 @@ const InventoryManagement = () => {
   const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVColor(v.color ?? ""); setVNotes(v.notes ?? ""); setVariantDialog(true); };
   const saveVariant = async () => {
     if (!vThickness.trim() || !vCompany.trim() || !activeTypeId) return;
+    // Default a bare-number thickness to mm (e.g. "12" -> "12 mm").
+    const thickness = normalizeThickness(vThickness);
     // Duplicate prevention: same glass type + normalized thickness/company/color.
-    const dupKey = `${normKey(vThickness)}|${normKey(vCompany)}|${normKey(vColor)}`;
+    const dupKey = `${normKey(thickness)}|${normKey(vCompany)}|${normKey(vColor)}`;
     const duplicate = (variantsByType[activeTypeId] ?? []).some(v =>
       v.id !== editVariant?.id &&
       `${normKey(v.thickness)}|${normKey(v.company_purchased)}|${normKey(v.color ?? "")}` === dupKey
@@ -181,13 +206,13 @@ const InventoryManagement = () => {
       return;
     }
     const ok = editVariant
-      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
-      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
+      ? await inv.updateVariant(editVariant.id, { thickness, company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
+      : await inv.createVariant({ glass_type_id: activeTypeId, thickness, company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
     if (ok) setVariantDialog(false);
   };
 
   // ---- Stock item handlers ----
-  const openAddItem = () => { setEditItem(null); setILength(""); setIBreadth(""); setIUnit("ft"); setISheets(""); setIComment(""); setItemDialog(true); };
+  const openAddItem = () => { setEditItem(null); setILength(""); setIBreadth(""); setIUnit("mm"); setISheets(""); setIComment(""); setItemDialog(true); };
   const openEditItem = (i: GlassStockItem) => { setEditItem(i); setILength(String(i.length)); setIBreadth(String(i.breadth)); setIUnit(i.unit); setISheets(String(i.number_of_sheets)); setIComment(i.comment ?? ""); setItemDialog(true); };
   const saveItem = async () => {
     if (!iLength || !iBreadth || !activeVariantId) return;
@@ -237,7 +262,7 @@ const InventoryManagement = () => {
           {activeVariant && view === "variant" && (
             <>
               <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-foreground font-medium">{activeVariant.thickness} {activeVariant.company_purchased}</span>
+              <span className="text-foreground font-medium">{variantLabel(activeVariant)}</span>
             </>
           )}
         </div>
@@ -516,8 +541,8 @@ const InventoryManagement = () => {
           <DialogHeader><DialogTitle>{editItem ? "Edit Size / Sheets" : "Add Size / Sheets"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Length *</Label><Input type="number" inputMode="decimal" value={iLength} onChange={e => setILength(e.target.value)} /></div>
-              <div><Label>Breadth *</Label><Input type="number" inputMode="decimal" value={iBreadth} onChange={e => setIBreadth(e.target.value)} /></div>
+              <div><Label>Length *</Label><ComboboxInput value={iLength} onChange={setILength} options={lengthOptions} placeholder="e.g. 8" /></div>
+              <div><Label>Breadth *</Label><ComboboxInput value={iBreadth} onChange={setIBreadth} options={breadthOptions} placeholder="e.g. 4" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
