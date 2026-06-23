@@ -262,7 +262,7 @@ const InventoryManagement = () => {
           {activeVariant && view === "variant" && (
             <>
               <ChevronRight className="w-3.5 h-3.5" />
-              <span className="text-foreground font-medium">{activeVariant.thickness} {activeVariant.company_purchased}</span>
+              <span className="text-foreground font-medium">{variantLabel(activeVariant)}</span>
             </>
           )}
         </div>
