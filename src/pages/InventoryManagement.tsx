@@ -541,8 +541,8 @@ const InventoryManagement = () => {
           <DialogHeader><DialogTitle>{editItem ? "Edit Size / Sheets" : "Add Size / Sheets"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Length *</Label><Input type="number" inputMode="decimal" value={iLength} onChange={e => setILength(e.target.value)} /></div>
-              <div><Label>Breadth *</Label><Input type="number" inputMode="decimal" value={iBreadth} onChange={e => setIBreadth(e.target.value)} /></div>
+              <div><Label>Length *</Label><ComboboxInput value={iLength} onChange={setILength} options={lengthOptions} placeholder="e.g. 8" /></div>
+              <div><Label>Breadth *</Label><ComboboxInput value={iBreadth} onChange={setIBreadth} options={breadthOptions} placeholder="e.g. 4" /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
