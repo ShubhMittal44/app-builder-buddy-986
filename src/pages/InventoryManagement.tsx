@@ -193,8 +193,10 @@ const InventoryManagement = () => {
   const openEditVariant = (v: GlassVariant) => { setEditVariant(v); setVThickness(v.thickness); setVCompany(v.company_purchased); setVColor(v.color ?? ""); setVNotes(v.notes ?? ""); setVariantDialog(true); };
   const saveVariant = async () => {
     if (!vThickness.trim() || !vCompany.trim() || !activeTypeId) return;
+    // Default a bare-number thickness to mm (e.g. "12" -> "12 mm").
+    const thickness = normalizeThickness(vThickness);
     // Duplicate prevention: same glass type + normalized thickness/company/color.
-    const dupKey = `${normKey(vThickness)}|${normKey(vCompany)}|${normKey(vColor)}`;
+    const dupKey = `${normKey(thickness)}|${normKey(vCompany)}|${normKey(vColor)}`;
     const duplicate = (variantsByType[activeTypeId] ?? []).some(v =>
       v.id !== editVariant?.id &&
       `${normKey(v.thickness)}|${normKey(v.company_purchased)}|${normKey(v.color ?? "")}` === dupKey
@@ -204,13 +206,13 @@ const InventoryManagement = () => {
       return;
     }
     const ok = editVariant
-      ? await inv.updateVariant(editVariant.id, { thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
-      : await inv.createVariant({ glass_type_id: activeTypeId, thickness: vThickness.trim(), company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
+      ? await inv.updateVariant(editVariant.id, { thickness, company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null })
+      : await inv.createVariant({ glass_type_id: activeTypeId, thickness, company_purchased: vCompany.trim(), color: vColor.trim() || null, notes: vNotes.trim() || null });
     if (ok) setVariantDialog(false);
   };
 
   // ---- Stock item handlers ----
-  const openAddItem = () => { setEditItem(null); setILength(""); setIBreadth(""); setIUnit("ft"); setISheets(""); setIComment(""); setItemDialog(true); };
+  const openAddItem = () => { setEditItem(null); setILength(""); setIBreadth(""); setIUnit("mm"); setISheets(""); setIComment(""); setItemDialog(true); };
   const openEditItem = (i: GlassStockItem) => { setEditItem(i); setILength(String(i.length)); setIBreadth(String(i.breadth)); setIUnit(i.unit); setISheets(String(i.number_of_sheets)); setIComment(i.comment ?? ""); setItemDialog(true); };
   const saveItem = async () => {
     if (!iLength || !iBreadth || !activeVariantId) return;
