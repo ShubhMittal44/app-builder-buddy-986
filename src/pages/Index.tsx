@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +7,31 @@ import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as Us
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
+const adminModules = [
+  {
+    title: "Staff Management",
+    description: "Manage staff, vehicle, and other expenses.",
+    icon: Briefcase,
+    path: "/admin/staff-management",
+  },
+  {
+    title: "DayBook",
+    description: "Manage DayBook, Toughened Diary, and Rama entries.",
+    icon: BookOpen,
+    path: "/admin/daybook",
+  },
+  {
+    title: "Users",
+    description: "Create and manage platform users.",
+    icon: UsersIcon,
+    path: "/admin/users",
+  },
+];
+
 const Index = () => {
   const { isAdmin, signOut } = useAuth();
-  const location = useLocation();
-  
-  // Hide Orders link on desktop when on orders pages
-  const isOnOrdersPage = location.pathname === '/orders' || 
-                         location.pathname.startsWith('/orders/') || 
-                         location.pathname === '/new';
+
+
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
