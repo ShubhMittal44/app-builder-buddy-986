@@ -14,6 +14,7 @@ export const MobileBottomNav = () => {
     
     ...(isAdmin ? [{ icon: Briefcase, label: "Staff", path: "/admin/staff-management" }] : []),
     ...(isAdmin ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
+    ...(isAdmin ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
     ...(isAdmin ? [{ icon: BookOpen, label: "DayBook", path: "/admin/daybook" }] : []),
   ];
 
