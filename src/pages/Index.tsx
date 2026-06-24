@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageBadge } from "@/components/ui/stage-badge";
-import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, Briefcase, BookOpen, Boxes } from "lucide-react";
+import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as UsersIcon, Briefcase, BookOpen, Boxes, Wallet } from "lucide-react";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
