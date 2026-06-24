@@ -41,6 +41,102 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_ledger_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          entry_date: string
+          entry_type: string
+          id: string
+          notes: string | null
+          order_id: string | null
+          payment_mode: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          entry_date?: string
+          entry_type: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_mode?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          entry_date?: string
+          entry_type?: string
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_mode?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_ledger_entries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          customer_name: string
+          customer_name_norm: string
+          id: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_name: string
+          customer_name_norm: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_name?: string
+          customer_name_norm?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daybook_entries: {
         Row: {
           advance_amount: number | null
@@ -262,6 +358,7 @@ export type Database = {
           assign_site: Database["public"]["Enums"]["site_enum"] | null
           city: string | null
           created_at: string | null
+          customer_id: string | null
           customer_name: string
           estimated_duration: number | null
           files: Json | null
@@ -283,6 +380,7 @@ export type Database = {
           assign_site?: Database["public"]["Enums"]["site_enum"] | null
           city?: string | null
           created_at?: string | null
+          customer_id?: string | null
           customer_name: string
           estimated_duration?: number | null
           files?: Json | null
@@ -304,6 +402,7 @@ export type Database = {
           assign_site?: Database["public"]["Enums"]["site_enum"] | null
           city?: string | null
           created_at?: string | null
+          customer_id?: string | null
           customer_name?: string
           estimated_duration?: number | null
           files?: Json | null
@@ -319,7 +418,15 @@ export type Database = {
           total_amount?: number | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       other_entries: {
         Row: {
