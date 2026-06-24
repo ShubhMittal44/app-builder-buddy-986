@@ -78,47 +78,33 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Admin Quick Actions */}
+          {/* Admin Modules */}
           {isAdmin && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <Button asChild variant="default" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/inventory">
-                  <Boxes className="w-6 h-6" />
-                  <span>Inventory</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/orders">
-                  <ClipboardList className="w-6 h-6" />
-                  <span>Orders</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/customer-ledger">
-                  <Wallet className="w-6 h-6" />
-                  <span>Customer Ledger</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/staff-management">
-                  <Briefcase className="w-6 h-6" />
-                  <span>Staff Mgmt</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/daybook">
-                  <BookOpen className="w-6 h-6" />
-                  <span>DayBook</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/users">
-                  <UsersIcon className="w-6 h-6" />
-                  <span>Users</span>
-                </Link>
-              </Button>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Admin Modules</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {adminModules.map((mod) => (
+                  <Card key={mod.path} className="hover:border-primary/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <mod.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        {mod.title}
+                      </CardTitle>
+                      <CardDescription>{mod.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild className="w-full" variant="secondary">
+                        <Link to={mod.path}>Open</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
+
 
 
           {/* Workflow Stages */}
