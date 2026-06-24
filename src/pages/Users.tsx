@@ -122,22 +122,38 @@ export default function Users() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Surface the actual error message returned by the edge function
+        let message = error.message;
+        try {
+          const ctx = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) message = body.error;
+          }
+        } catch {
+          // ignore parse errors, fall back to generic message
+        }
+        throw new Error(message);
+      }
+
+      if (data?.error) throw new Error(data.error);
 
       toast.success('User created successfully!');
       setGeneratedPassword(newUserPassword);
-      
+
       // Refresh users list
       await fetchUsers();
-      
+
       // Reset form but keep dialog open to show password
     } catch (err) {
       console.error('Error creating user:', err);
-      toast.error('Failed to create user. You may need to create an edge function for admin operations.');
+      toast.error(err instanceof Error ? err.message : 'Failed to create user');
     } finally {
       setCreatingUser(false);
     }
   };
+
 
   const handleChangeRole = async () => {
     if (!selectedUser) return;

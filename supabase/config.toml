@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.admin-force-close-order]
 verify_jwt = true
+
+[functions.admin-create-user]
+verify_jwt = true

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,14 +7,31 @@ import { Package, ClipboardList, Truck, Wrench, CheckCircle, LogOut, Users as Us
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
+const adminModules = [
+  {
+    title: "Staff Management",
+    description: "Manage staff, vehicle, and other expenses.",
+    icon: Briefcase,
+    path: "/admin/staff-management",
+  },
+  {
+    title: "DayBook",
+    description: "Manage DayBook, Toughened Diary, and Rama entries.",
+    icon: BookOpen,
+    path: "/admin/daybook",
+  },
+  {
+    title: "Users",
+    description: "Create and manage platform users.",
+    icon: UsersIcon,
+    path: "/admin/users",
+  },
+];
+
 const Index = () => {
   const { isAdmin, signOut } = useAuth();
-  const location = useLocation();
-  
-  // Hide Orders link on desktop when on orders pages
-  const isOnOrdersPage = location.pathname === '/orders' || 
-                         location.pathname.startsWith('/orders/') || 
-                         location.pathname === '/new';
+
+
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -23,60 +40,38 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">RGH – Order Management</h1>
-            <nav className="flex gap-4">
-              {!isOnOrdersPage && (
-                <Button variant="ghost" asChild>
-                  <Link to="/orders">Orders</Link>
-                </Button>
-              )}
-              <Button asChild>
+            <nav className="flex items-center gap-1 lg:gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/">Home</Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/orders">Orders</Link>
+              </Button>
+              <Button size="sm" asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
               {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/staff-management">
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Staff Mgmt
-                  </Link>
-                </Button>
-              )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/inventory">
-                    <Boxes className="w-4 h-4 mr-2" />
+                    <Boxes className="w-4 h-4 mr-1.5" />
                     Inventory
                   </Link>
                 </Button>
               )}
               {isAdmin && (
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/customer-ledger">
-                    <Wallet className="w-4 h-4 mr-2" />
-                    Customer Ledger
+                    <Wallet className="w-4 h-4 mr-1.5" />
+                    Ledger
                   </Link>
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/daybook">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    DayBook
-                  </Link>
-                </Button>
-              )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/users">
-                    <UsersIcon className="w-4 h-4 mr-2" />
-                    Users
-                  </Link>
-                </Button>
-              )}
-              <Button variant="ghost" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
+              <Button variant="ghost" size="sm" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-1.5" />
                 Sign Out
               </Button>
             </nav>
+
           </div>
         </div>
       </header>
@@ -100,47 +95,33 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Admin Quick Actions */}
+          {/* Admin Modules */}
           {isAdmin && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <Button asChild variant="default" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/inventory">
-                  <Boxes className="w-6 h-6" />
-                  <span>Inventory</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/orders">
-                  <ClipboardList className="w-6 h-6" />
-                  <span>Orders</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/customer-ledger">
-                  <Wallet className="w-6 h-6" />
-                  <span>Customer Ledger</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/staff-management">
-                  <Briefcase className="w-6 h-6" />
-                  <span>Staff Mgmt</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/daybook">
-                  <BookOpen className="w-6 h-6" />
-                  <span>DayBook</span>
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
-                <Link to="/admin/users">
-                  <UsersIcon className="w-6 h-6" />
-                  <span>Users</span>
-                </Link>
-              </Button>
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">Admin Modules</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {adminModules.map((mod) => (
+                  <Card key={mod.path} className="hover:border-primary/40 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <mod.icon className="w-5 h-5 text-primary" />
+                        </div>
+                        {mod.title}
+                      </CardTitle>
+                      <CardDescription>{mod.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Button asChild className="w-full" variant="secondary">
+                        <Link to={mod.path}>Open</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
+
 
 
           {/* Workflow Stages */}
