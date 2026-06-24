@@ -102,7 +102,7 @@ const Index = () => {
 
           {/* Admin Quick Actions */}
           {isAdmin && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <Button asChild variant="default" className="h-auto py-4 flex-col gap-2">
                 <Link to="/admin/inventory">
                   <Boxes className="w-6 h-6" />
@@ -113,6 +113,12 @@ const Index = () => {
                 <Link to="/orders">
                   <ClipboardList className="w-6 h-6" />
                   <span>Orders</span>
+                </Link>
+              </Button>
+              <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
+                <Link to="/admin/customer-ledger">
+                  <Wallet className="w-6 h-6" />
+                  <span>Customer Ledger</span>
                 </Link>
               </Button>
               <Button asChild variant="secondary" className="h-auto py-4 flex-col gap-2">
