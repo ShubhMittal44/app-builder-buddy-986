@@ -23,60 +23,38 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-primary">RGH – Order Management</h1>
-            <nav className="flex gap-4">
-              {!isOnOrdersPage && (
-                <Button variant="ghost" asChild>
-                  <Link to="/orders">Orders</Link>
-                </Button>
-              )}
-              <Button asChild>
+            <nav className="flex items-center gap-1 lg:gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/">Home</Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/orders">Orders</Link>
+              </Button>
+              <Button size="sm" asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
               {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/staff-management">
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Staff Mgmt
-                  </Link>
-                </Button>
-              )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/inventory">
-                    <Boxes className="w-4 h-4 mr-2" />
+                    <Boxes className="w-4 h-4 mr-1.5" />
                     Inventory
                   </Link>
                 </Button>
               )}
               {isAdmin && (
-                <Button variant="ghost" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/customer-ledger">
-                    <Wallet className="w-4 h-4 mr-2" />
-                    Customer Ledger
+                    <Wallet className="w-4 h-4 mr-1.5" />
+                    Ledger
                   </Link>
                 </Button>
               )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/daybook">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    DayBook
-                  </Link>
-                </Button>
-              )}
-              {isAdmin && (
-                <Button variant="ghost" asChild>
-                  <Link to="/admin/users">
-                    <UsersIcon className="w-4 h-4 mr-2" />
-                    Users
-                  </Link>
-                </Button>
-              )}
-              <Button variant="ghost" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
+              <Button variant="ghost" size="sm" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-1.5" />
                 Sign Out
               </Button>
             </nav>
+
           </div>
         </div>
       </header>
