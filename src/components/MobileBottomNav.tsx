@@ -35,7 +35,7 @@ export const MobileBottomNav = () => {
       <div className={cn(
         "grid h-16",
         isAdmin ? "grid-cols-8" : "grid-cols-4"
-      )}>')
+      )}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
