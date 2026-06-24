@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Plus, Briefcase, BookOpen, LogOut, Boxes, Wallet } from "lucide-react";
+import { Home, ClipboardList, Plus, LogOut, Boxes, Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -11,12 +11,10 @@ export const MobileBottomNav = () => {
     { icon: Home, label: "Home", path: "/" },
     { icon: ClipboardList, label: "Orders", path: "/orders" },
     { icon: Plus, label: "Add", path: "/new" },
-    
-    ...(isAdmin ? [{ icon: Briefcase, label: "Staff", path: "/admin/staff-management" }] : []),
     ...(isAdmin ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
     ...(isAdmin ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
-    ...(isAdmin ? [{ icon: BookOpen, label: "DayBook", path: "/admin/daybook" }] : []),
   ];
+
 
   const isActive = (path: string) => {
     if (path === "/") {
