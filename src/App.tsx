@@ -16,6 +16,8 @@ import Users from "./pages/Users";
 
 import StaffManagement from "./pages/StaffManagement";
 import InventoryManagement from "./pages/InventoryManagement";
+import CustomerLedger from "./pages/CustomerLedger";
+import CustomerLedgerDetail from "./pages/CustomerLedgerDetail";
 import DayBook from "./pages/DayBook";
 import NotFound from "./pages/NotFound";
 
