@@ -803,6 +803,34 @@ const Orders = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showBulkCloseDialog} onOpenChange={setShowBulkCloseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close selected orders?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the selected orders as Closed immediately and skip remaining stages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkClosing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsBulkClosing(true);
+                handleBulkClose().finally(() => {
+                  setIsBulkClosing(false);
+                  setShowBulkCloseDialog(false);
+                });
+              }}
+              disabled={isBulkClosing}
+            >
+              {isBulkClosing ? "Closing..." : "Confirm Close"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       
       <MobileBottomNav />
       <OfflineIndicator />
