@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2 } from "lucide-react";
+import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -70,6 +70,8 @@ const Orders = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkCloseDialog, setShowBulkCloseDialog] = useState(false);
+  const [isBulkClosing, setIsBulkClosing] = useState(false);
   
   const { generatePDF, loading: pdfLoading } = useChalanPDF();
   const [notesPdfLoading, setNotesPdfLoading] = useState(false);
