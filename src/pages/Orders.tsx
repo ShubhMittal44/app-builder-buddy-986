@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2 } from "lucide-react";
+import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StageBadge } from "@/components/ui/stage-badge";
@@ -70,6 +70,8 @@ const Orders = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [showBulkCloseDialog, setShowBulkCloseDialog] = useState(false);
+  const [isBulkClosing, setIsBulkClosing] = useState(false);
   
   const { generatePDF, loading: pdfLoading } = useChalanPDF();
   const [notesPdfLoading, setNotesPdfLoading] = useState(false);
@@ -272,6 +274,39 @@ const Orders = () => {
     }
   };
 
+  const handleBulkClose = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Auth required', description: 'You must be logged in', variant: 'destructive' });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('bulk-close-orders', {
+        body: { order_ids: Array.from(selectedIds) },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+
+      const result = data as { closed_count?: number; already_closed_count?: number };
+      const closed = result?.closed_count ?? 0;
+      const already = result?.already_closed_count ?? 0;
+      toast({
+        title: 'Selected orders closed successfully.',
+        description: already > 0
+          ? `Closed ${closed} order(s). ${already} were already closed.`
+          : `Closed ${closed} order(s).`,
+      });
+      clearSelection();
+      refetch();
+    } catch (err: any) {
+      console.error('Bulk close error:', err);
+      toast({ title: 'Bulk close failed', description: err.message || 'Failed to close orders', variant: 'destructive' });
+    }
+  };
+
+
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -287,7 +322,7 @@ const Orders = () => {
     () => setSelectedRowIndex((prev) => Math.min(filteredOrders.length - 1, prev + 1)),
     () => {
       if (selectedRowIndex >= 0 && filteredOrders[selectedRowIndex]) {
-        navigate(`/orders/${filteredOrders[selectedRowIndex].id}`);
+        navigate(`/orders/${filteredOrders[selectedRowIndex].id}`, { state: { from: location.pathname + location.search } });
       }
     },
     () => setSelectedRowIndex(-1)
@@ -495,6 +530,10 @@ const Orders = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={clearSelection}>Clear</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowBulkCloseDialog(true)}>
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Close selected
+                  </Button>
                   <Button variant="destructive" size="sm" onClick={() => setShowBulkDeleteDialog(true)}>Delete selected</Button>
                 </div>
               </CardContent>
@@ -608,7 +647,7 @@ const Orders = () => {
                             className={`cursor-pointer hover:bg-muted/50 ${
                               selectedRowIndex === index ? "bg-muted" : ""
                             }`}
-                            onClick={() => navigate(`/orders/${order.id}`)}
+                            onClick={() => navigate(`/orders/${order.id}`, { state: { from: location.pathname + location.search } })}
                             tabIndex={0}
                             role="button"
                             aria-label={`View order ${order.order_number}`}
@@ -764,6 +803,34 @@ const Orders = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showBulkCloseDialog} onOpenChange={setShowBulkCloseDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Close selected orders?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the selected orders as Closed immediately and skip remaining stages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkClosing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setIsBulkClosing(true);
+                handleBulkClose().finally(() => {
+                  setIsBulkClosing(false);
+                  setShowBulkCloseDialog(false);
+                });
+              }}
+              disabled={isBulkClosing}
+            >
+              {isBulkClosing ? "Closing..." : "Confirm Close"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       
       <MobileBottomNav />
       <OfflineIndicator />
