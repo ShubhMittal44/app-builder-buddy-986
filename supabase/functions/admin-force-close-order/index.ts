@@ -36,11 +36,22 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Verify admin via RLS-protected profiles table
+    // Identify the authenticated user
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !userData?.user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify admin via RLS-protected profiles table (scoped to this user)
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role, email, display_name')
-      .single();
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
 
     if (profileError || !profile || profile.role !== 'admin') {
       console.log('Permission denied:', { profileError, profile });
@@ -49,6 +60,7 @@ Deno.serve(async (req) => {
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
 
     // Parse request body
     const body = await req.json().catch(() => ({} as any));
