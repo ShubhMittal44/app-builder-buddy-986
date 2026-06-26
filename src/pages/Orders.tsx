@@ -530,6 +530,10 @@ const Orders = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={clearSelection}>Clear</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowBulkCloseDialog(true)}>
+                    <CheckCircle className="w-4 h-4 mr-1" />
+                    Close selected
+                  </Button>
                   <Button variant="destructive" size="sm" onClick={() => setShowBulkDeleteDialog(true)}>Delete selected</Button>
                 </div>
               </CardContent>
