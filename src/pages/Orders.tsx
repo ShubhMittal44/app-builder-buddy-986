@@ -274,6 +274,39 @@ const Orders = () => {
     }
   };
 
+  const handleBulkClose = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Auth required', description: 'You must be logged in', variant: 'destructive' });
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke('bulk-close-orders', {
+        body: { order_ids: Array.from(selectedIds) },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) throw error;
+
+      const result = data as { closed_count?: number; already_closed_count?: number };
+      const closed = result?.closed_count ?? 0;
+      const already = result?.already_closed_count ?? 0;
+      toast({
+        title: 'Selected orders closed successfully.',
+        description: already > 0
+          ? `Closed ${closed} order(s). ${already} were already closed.`
+          : `Closed ${closed} order(s).`,
+      });
+      clearSelection();
+      refetch();
+    } catch (err: any) {
+      console.error('Bulk close error:', err);
+      toast({ title: 'Bulk close failed', description: err.message || 'Failed to close orders', variant: 'destructive' });
+    }
+  };
+
+
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
