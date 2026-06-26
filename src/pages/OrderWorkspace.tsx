@@ -48,6 +48,7 @@ const OrderWorkspace = () => {
   const location = useLocation();
   const { isAdmin } = useAuth();
   const { order, loading, error } = useOrder(id);
+  const backTo = (location.state as { from?: string } | null)?.from || "/orders";
   const { updateOrder, updateStage, forceCloseOrder } = useOrderMutations();
   const { uploadFiles, deleteFile, downloadFile, uploading, progress } = useFileUpload();
   const { notifyOrderUpdate } = useNotifications();
