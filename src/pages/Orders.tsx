@@ -322,7 +322,7 @@ const Orders = () => {
     () => setSelectedRowIndex((prev) => Math.min(filteredOrders.length - 1, prev + 1)),
     () => {
       if (selectedRowIndex >= 0 && filteredOrders[selectedRowIndex]) {
-        navigate(`/orders/${filteredOrders[selectedRowIndex].id}`);
+        navigate(`/orders/${filteredOrders[selectedRowIndex].id}`, { state: { from: location.pathname + location.search } });
       }
     },
     () => setSelectedRowIndex(-1)
@@ -643,7 +643,7 @@ const Orders = () => {
                             className={`cursor-pointer hover:bg-muted/50 ${
                               selectedRowIndex === index ? "bg-muted" : ""
                             }`}
-                            onClick={() => navigate(`/orders/${order.id}`)}
+                            onClick={() => navigate(`/orders/${order.id}`, { state: { from: location.pathname + location.search } })}
                             tabIndex={0}
                             role="button"
                             aria-label={`View order ${order.order_number}`}
