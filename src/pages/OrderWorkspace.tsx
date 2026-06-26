@@ -110,7 +110,7 @@ const OrderWorkspace = () => {
             {error || "Order Not Found"}
           </h2>
           <Button asChild>
-            <Link to="/">Back to Orders</Link>
+            <Link to="/orders">Back to Orders</Link>
           </Button>
         </div>
       </div>
@@ -201,7 +201,7 @@ const OrderWorkspace = () => {
     try {
       await updateStage(order.id, order, "closed");
       setShowCloseDialog(false);
-      navigate("/");
+      navigate(backTo);
     } catch (err) {
       console.error("Failed to close order:", err);
       setShowCloseDialog(false);
@@ -310,7 +310,7 @@ const OrderWorkspace = () => {
         description: result.message || `Order #${order.order_number} has been deleted`,
       });
 
-      navigate('/');
+      navigate(backTo);
     } catch (error: any) {
       console.error('Delete error:', error);
       toast({
@@ -383,7 +383,7 @@ const OrderWorkspace = () => {
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Back Button */}
           <Button variant="ghost" asChild>
-            <Link to="/">
+            <Link to={backTo}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Orders
             </Link>
