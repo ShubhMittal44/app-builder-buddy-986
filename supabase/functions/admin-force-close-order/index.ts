@@ -36,8 +36,9 @@ Deno.serve(async (req) => {
       }
     );
 
-    // Identify the authenticated user
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+    // Identify the authenticated user (pass token explicitly — no session in edge runtime)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !userData?.user) {
       console.error('Auth error:', userError);
       return new Response(
