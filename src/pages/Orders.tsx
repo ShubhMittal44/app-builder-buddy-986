@@ -415,12 +415,24 @@ const Orders = () => {
       body: { order_id: deleteOrderId },
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    if (error) throw error;
+    if (error) {
+      // Surface the actual server error message when available
+      let serverMsg = error.message;
+      try {
+        const ctx: any = (error as any).context;
+        if (ctx && typeof ctx.json === 'function') {
+          const eb = await ctx.json();
+          if (eb?.error) serverMsg = eb.error;
+        }
+      } catch { /* ignore */ }
+      throw new Error(serverMsg);
+    }
+    if ((data as any)?.error) throw new Error((data as any).error);
 
       const result = data as any;
-      
+
       toast({
-        title: "Order deleted",
+        title: "Order deleted successfully.",
         description: result.message || `Order #${deleteOrderNumber} has been deleted`,
       });
 
