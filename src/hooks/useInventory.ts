@@ -209,6 +209,43 @@ export function useInventory() {
     await fetchAll(); return true;
   };
 
+  // ---- Stock adjustment (Add Stock / Sale Stock) via secure edge function ----
+  const adjustStock = async (payload: { inventory_id: string; action_type: 'add_stock' | 'sale_stock'; quantity: number; remarks?: string }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({ title: 'Auth required', description: 'You must be logged in', variant: 'destructive' });
+        return false;
+      }
+      const { data, error } = await supabase.functions.invoke('adjust-inventory-stock', {
+        body: payload,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) {
+        // Surface the actual server error message when available
+        let serverMsg = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            if (body?.error) serverMsg = body.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(serverMsg);
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({
+        title: payload.action_type === 'add_stock' ? 'Stock added successfully.' : 'Stock sold/removed successfully.',
+      });
+      await fetchAll();
+      return true;
+    } catch (err: any) {
+      console.error('Adjust stock error:', err);
+      toast({ title: 'Error', description: err.message || 'Failed to adjust stock', variant: 'destructive' });
+      return false;
+    }
+  };
+
   return {
     glassTypes, variants, stockItems, loading,
     sheetsByVariant, variantsByType, sheetsByType,
