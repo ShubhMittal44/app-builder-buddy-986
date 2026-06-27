@@ -713,7 +713,7 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
           {entries.map(e => (
             <div key={e.id} className="border rounded-lg p-3 text-sm space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <Badge variant="outline">{ACTION_LABELS[e.action_type] ?? e.action_type}</Badge>
+                <Badge variant="outline" className={ACTION_BADGE_CLASS[e.action_type] ?? ""}>{ACTION_LABELS[e.action_type] ?? e.action_type}</Badge>
                 <span className="text-xs text-muted-foreground">{new Date(e.changed_at).toLocaleString()}</span>
               </div>
               <p className="font-medium">{describe(e)}</p>
