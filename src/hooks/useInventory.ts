@@ -14,7 +14,9 @@ export type ActionType =
   | 'updated_variant'
   | 'deleted_variant'
   | 'updated_glass_type'
-  | 'deleted_glass_type';
+  | 'deleted_glass_type'
+  | 'add_stock'
+  | 'sale_stock';
 
 export interface GlassType {
   id: string;
