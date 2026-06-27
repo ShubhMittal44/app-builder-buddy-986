@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     // Fetch selected orders
     const { data: orders, error: fetchError } = await supabaseAdmin
       .from('orders')
-      .select('id, order_number, stage, timeline')
+      .select('id, order_number, stage, timeline, total_amount, freight_amount')
       .in('id', ids);
 
     if (fetchError) {
