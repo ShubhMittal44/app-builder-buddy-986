@@ -252,7 +252,7 @@ export function useInventory() {
     refetch: fetchAll,
     createGlassType, updateGlassType, deleteGlassType,
     createVariant, updateVariant, deleteVariant,
-    createStockItem, updateStockItem, deleteStockItem,
+    createStockItem, updateStockItem, deleteStockItem, adjustStock,
   };
 }
 
