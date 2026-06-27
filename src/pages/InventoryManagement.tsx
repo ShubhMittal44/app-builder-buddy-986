@@ -637,6 +637,14 @@ const ACTION_LABELS: Record<string, string> = {
   created_stock_item: "Added stock item",
   updated_stock_item: "Updated stock item",
   deleted_stock_item: "Deleted stock item",
+  add_stock: "Add Stock",
+  sale_stock: "Sale Stock",
+};
+
+// Badge styling per action type (positive vs warning for stock movements).
+const ACTION_BADGE_CLASS: Record<string, string> = {
+  add_stock: "bg-accent text-accent-foreground border-transparent",
+  sale_stock: "bg-amber-500 text-white border-transparent",
 };
 
 function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
