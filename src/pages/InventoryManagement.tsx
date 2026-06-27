@@ -580,6 +580,9 @@ const InventoryManagement = () => {
       {/* ====== Activity Log ====== */}
       <ActivityLogDialog open={showActivity} onOpenChange={setShowActivity} glassTypes={glassTypes} variants={variants} />
 
+      {/* ====== Add / Sale Stock ====== */}
+      <StockAdjustDialog open={stockDialog} onOpenChange={setStockDialog} mode={stockMode} inv={inv} />
+
       {/* ====== Delete confirmations ====== */}
       <AlertDialog open={!!deleteTypeId} onOpenChange={() => setDeleteTypeId(null)}>
         <AlertDialogContent>
