@@ -108,15 +108,20 @@ Deno.serve(async (req) => {
       const newEntry = {
         timestamp: new Date().toISOString(),
         user: userName,
-        action: 'Order closed directly from bulk action',
+        action: 'bulk_force_close',
+        label: 'Order closed directly from bulk action',
         from_stage: order.stage,
         to_stage: 'closed',
       };
+
+      // Mark as fully paid: advance covers total + freight so balance becomes 0
+      const fullyPaidAdvance = Number(order.total_amount ?? 0) + Number(order.freight_amount ?? 0);
 
       const { error: updateError } = await supabaseAdmin
         .from('orders')
         .update({
           stage: 'closed',
+          advance_amount: fullyPaidAdvance,
           timeline: [...currentTimeline, newEntry],
           updated_at: new Date().toISOString(),
         })
