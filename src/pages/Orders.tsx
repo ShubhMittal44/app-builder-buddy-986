@@ -265,7 +265,7 @@ const Orders = () => {
           throw new Error(errJson.error || `Bulk delete failed (${resp.status})`);
         }
       }
-      toast({ title: 'Deleted orders', description: `Deleted ${Array.from(selectedIds).length} orders` });
+      toast({ title: 'Selected orders deleted successfully.', description: `Deleted ${Array.from(selectedIds).length} order(s).` });
       clearSelection();
       refetch();
     } catch (err: any) {
