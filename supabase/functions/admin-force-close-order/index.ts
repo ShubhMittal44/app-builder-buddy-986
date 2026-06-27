@@ -76,10 +76,10 @@ Deno.serve(async (req) => {
 
     console.log('Admin force close request:', { order_id });
 
-    // Fetch current order to get timeline and stage
+    // Fetch current order to get timeline, stage and amounts
     const { data: order, error: orderError } = await supabaseClient
       .from('orders')
-      .select('id, order_number, stage, timeline')
+      .select('id, order_number, stage, timeline, total_amount, freight_amount')
       .eq('id', order_id)
       .maybeSingle();
 
@@ -104,16 +104,21 @@ Deno.serve(async (req) => {
     const newEntry = {
       timestamp: new Date().toISOString(),
       user: userName,
-      action: 'Order force closed',
+      action: 'force_close',
+      label: 'Order closed directly',
       from_stage: order.stage,
       to_stage: 'closed',
     };
 
-    // Update order to closed with new timeline entry
+    // Mark as fully paid: advance covers total + freight so balance becomes 0
+    const fullyPaidAdvance = Number(order.total_amount ?? 0) + Number(order.freight_amount ?? 0);
+
+    // Update order to closed with new timeline entry and consistent payment fields
     const { error: updateError } = await supabaseClient
       .from('orders')
       .update({
         stage: 'closed',
+        advance_amount: fullyPaidAdvance,
         timeline: [...currentTimeline, newEntry],
       })
       .eq('id', order_id);

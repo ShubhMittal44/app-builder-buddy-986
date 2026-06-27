@@ -229,12 +229,18 @@ export const useOrderMutations = () => {
         to_stage: newStage
       };
 
+      // When an order is closed, treat it as fully paid: advance covers the full amount so balance = 0.
+      const updatePayload: Record<string, any> = {
+        stage: newStage,
+        timeline: [...currentTimeline, newTimelineEntry] as any,
+      };
+      if (newStage === 'closed') {
+        updatePayload.advance_amount = Number(currentOrder.total_amount || 0) + Number((currentOrder as any).freight_amount || 0);
+      }
+
       const { data, error } = await supabase
         .from('orders')
-        .update({
-          stage: newStage,
-          timeline: [...currentTimeline, newTimelineEntry] as any
-        })
+        .update(updatePayload)
         .eq('id', id)
         .select()
         .single();

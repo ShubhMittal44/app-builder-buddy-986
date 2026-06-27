@@ -7,7 +7,6 @@ const corsHeaders = {
 
 interface BulkDeleteRequest {
   ids?: string[];
-  // filterQuery?: Record<string, unknown>; // Reserved for future use
 }
 
 Deno.serve(async (req) => {
@@ -35,11 +34,23 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify admin via RLS-protected profiles table (no need to decode token)
+    // Identify the authenticated user (pass token explicitly — no session in edge runtime)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !userData?.user) {
+      console.error('Auth error:', userError);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify admin via RLS-protected profiles table (scoped to this user)
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
-      .single();
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
 
     if (profileError || !profile || profile.role !== 'admin') {
       console.log('Permission denied (bulk):', { profileError, profile });
@@ -49,7 +60,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { ids /*, filterQuery*/ }: BulkDeleteRequest = await req.json();
+    const { ids }: BulkDeleteRequest = await req.json();
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return new Response(JSON.stringify({ error: 'No ids provided' }), {
@@ -83,7 +94,7 @@ Deno.serve(async (req) => {
       otherFiles.forEach((f) => f?.path && filesToDelete.push(f.path));
 
       // Also list entire order folder
-      const folderPath = `orders/${order.id}`;
+      const folderPath = `${order.id}`;
       const { data: folderFiles, error: listError } = await supabaseAdmin.storage
         .from('sizes_chalan')
         .list(folderPath);
@@ -106,8 +117,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Delete orders (RLS enforces admin-only)
-    const { error: deleteError } = await supabaseClient
+    // Delete orders using the service role client (admin already verified)
+    const { error: deleteError } = await supabaseAdmin
       .from('orders')
       .delete()
       .in('id', ids);

@@ -42,11 +42,23 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify admin via RLS-protected profiles table (no need to decode token)
+    // Identify the authenticated user (pass token explicitly — no session in edge runtime)
+    const token = authHeader.replace('Bearer ', '');
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError || !userData?.user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify admin via RLS-protected profiles table (scoped to this user)
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('role')
-      .single();
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
 
     if (profileError || !profile || profile.role !== 'admin') {
       console.log('Permission denied:', { profileError, profile });
@@ -88,7 +100,7 @@ Deno.serve(async (req) => {
 
     // Delete files from Storage
     const filesToDelete: string[] = [];
-    
+
     // Collect file paths from files JSON field (if present)
     if ((order as any).chalan_files && Array.isArray((order as any).chalan_files)) {
       (order as any).chalan_files.forEach((file: any) => {
@@ -132,8 +144,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Delete the order (RLS will enforce admin-only)
-    const { error: deleteError } = await supabaseClient
+    // Delete the order using the service role client (admin already verified)
+    const { error: deleteError } = await supabaseAdmin
       .from('orders')
       .delete()
       .eq('id', order_id);
@@ -149,8 +161,8 @@ Deno.serve(async (req) => {
     console.log('Order deleted successfully:', order_id);
 
     return new Response(
-      JSON.stringify({ 
-        ok: true, 
+      JSON.stringify({
+        ok: true,
         message: `Order #${order.order_number} deleted successfully`,
         files_deleted: filesToDelete.length
       }),
