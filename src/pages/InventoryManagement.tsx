@@ -20,7 +20,7 @@ import {
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
 import { ComboboxInput } from "@/components/ui/combobox-input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus } from "lucide-react";
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
 
@@ -64,6 +64,11 @@ const InventoryManagement = () => {
 
   // ---- Activity log ----
   const [showActivity, setShowActivity] = useState(false);
+
+  // ---- Stock adjust (Add / Sale) ----
+  const [stockDialog, setStockDialog] = useState(false);
+  const [stockMode, setStockMode] = useState<"add_stock" | "sale_stock">("add_stock");
+  const openStockDialog = (mode: "add_stock" | "sale_stock") => { setStockMode(mode); setStockDialog(true); };
 
   // ---- Glass type dialog ----
   const [typeDialog, setTypeDialog] = useState(false);
