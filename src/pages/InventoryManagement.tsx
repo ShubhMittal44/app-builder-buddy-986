@@ -686,6 +686,13 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       }
     } else if (e.action_type === "created_variant" && e.new_value?.color?.trim()) {
       detail += ` — color ${e.new_value.color}`;
+    } else if ((e.action_type === "add_stock" || e.action_type === "sale_stock") && e.new_value) {
+      const size = e.new_value.length != null ? ` ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit ?? ""}` : "";
+      const prev = e.old_value?.number_of_sheets ?? 0;
+      const next = e.new_value?.number_of_sheets ?? 0;
+      const changed = e.new_value?.changed_quantity ?? (next - prev);
+      const sign = changed > 0 ? `+${changed}` : `${changed}`;
+      detail += ` —${size}, sheets ${prev} → ${next} (${sign})`;
     }
     return detail;
   };
