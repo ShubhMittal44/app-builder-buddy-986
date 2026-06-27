@@ -299,6 +299,16 @@ const InventoryManagement = () => {
           </div>
         </div>
 
+        {/* Stock adjustment actions */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => openStockDialog("add_stock")}>
+            <PackagePlus className="w-4 h-4 mr-1" />Add Stock
+          </Button>
+          <Button variant="secondary" onClick={() => openStockDialog("sale_stock")}>
+            <PackageMinus className="w-4 h-4 mr-1" />Sale Stock
+          </Button>
+        </div>
+
         {/* ====== VIEW: GLASS TYPES ====== */}
         {view === "types" && (
           <>
