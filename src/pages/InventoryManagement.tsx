@@ -727,4 +727,101 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
   );
 }
 
+// ====== Add / Sale Stock dialog ======
+function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  mode: "add_stock" | "sale_stock";
+  inv: ReturnType<typeof useInventory>;
+}) {
+  const { glassTypes, variants, stockItems, adjustStock } = inv;
+  const [typeId, setTypeId] = useState("");
+  const [variantId, setVariantId] = useState("");
+  const [itemId, setItemId] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Reset whenever the dialog opens.
+  useEffect(() => {
+    if (open) { setTypeId(""); setVariantId(""); setItemId(""); setQuantity(""); setRemarks(""); setSubmitting(false); }
+  }, [open]);
+
+  const typeVariants = useMemo(() => variants.filter(v => v.glass_type_id === typeId), [variants, typeId]);
+  const variantItems = useMemo(() => stockItems.filter(i => i.glass_variant_id === variantId), [stockItems, variantId]);
+  const selectedItem = useMemo(() => stockItems.find(i => i.id === itemId) ?? null, [stockItems, itemId]);
+  const currentStock = selectedItem ? Number(selectedItem.number_of_sheets) : 0;
+
+  const isAdd = mode === "add_stock";
+  const qtyNum = Number(quantity);
+  const insufficient = !isAdd && Number.isFinite(qtyNum) && qtyNum > currentStock;
+  const canSubmit = !!itemId && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && !submitting;
+
+  const submit = async () => {
+    if (!canSubmit || !selectedItem) return;
+    setSubmitting(true);
+    const ok = await adjustStock({ inventory_id: selectedItem.id, action_type: mode, quantity: Math.trunc(qtyNum), remarks: remarks.trim() || undefined });
+    setSubmitting(false);
+    if (ok) onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{isAdd ? "Add Stock" : "Sale Stock"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Glass Type *</Label>
+            <select value={typeId} onChange={e => { setTypeId(e.target.value); setVariantId(""); setItemId(""); }} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="">Select glass type</option>
+              {glassTypes.map(t => <option key={t.id} value={t.id}>{t.glass_type_name}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Thickness / Company / Color *</Label>
+            <select value={variantId} onChange={e => { setVariantId(e.target.value); setItemId(""); }} disabled={!typeId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
+              <option value="">Select variant</option>
+              {typeVariants.map(v => <option key={v.id} value={v.id}>{variantLabel(v)}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Size / Dimension *</Label>
+            <select value={itemId} onChange={e => setItemId(e.target.value)} disabled={!variantId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
+              <option value="">Select size</option>
+              {variantItems.map(i => <option key={i.id} value={i.id}>{i.length}×{i.breadth} {i.unit} — {i.number_of_sheets} sheets</option>)}
+            </select>
+          </div>
+
+          {selectedItem && (
+            <div className="rounded-md bg-muted px-3 py-2 text-sm">
+              Current Stock: <span className="font-semibold">{currentStock} sheets</span>
+            </div>
+          )}
+
+          <div>
+            <Label>{isAdd ? "Quantity to Add" : "Quantity to Sale"} *</Label>
+            <Input type="number" inputMode="numeric" min={1} value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="e.g. 5" />
+            {insufficient && <p className="text-destructive text-xs mt-1">Insufficient stock available.</p>}
+            {selectedItem && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && (
+              <p className="text-muted-foreground text-xs mt-1">New stock will be {currentStock + (isAdd ? Math.trunc(qtyNum) : -Math.trunc(qtyNum))} sheets.</p>
+            )}
+          </div>
+          <div>
+            <Label>Remarks</Label>
+            <Textarea value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Optional notes" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!canSubmit} className={isAdd ? "bg-accent text-accent-foreground hover:bg-accent/90" : ""}>
+            {submitting ? "Saving…" : (isAdd ? "Add Stock" : "Sale Stock")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default InventoryManagement;
+
