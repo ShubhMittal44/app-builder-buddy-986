@@ -124,7 +124,7 @@ const OrderWorkspace = () => {
     );
   }
 
-  const balance = totalAmount - advanceAmount + freightAmount;
+  const balance = totalAmount - advanceAmount;
   const uploadedFiles = Array.isArray(order.files) 
     ? order.files as unknown as UploadedFile[]
     : [];
