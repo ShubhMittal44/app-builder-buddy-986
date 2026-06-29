@@ -684,7 +684,8 @@ const Orders = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredOrders.map((order, index) => {
-                        const balance = (order.total_amount || 0) - (order.advance_amount || 0) + (order.freight_amount || 0);
+                        const balance = (order.total_amount || 0) - (order.advance_amount || 0);
+                        const orderType = ((order as any).order_type as string) || "Daybook";
                         return (
                           <TableRow
                             key={order.id}
