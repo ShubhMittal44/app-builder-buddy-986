@@ -541,6 +541,17 @@ const Orders = () => {
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
+                <Select value={orderTypeFilter} onValueChange={(value) => setOrderTypeFilter(value as "all" | "Daybook" | "Toughened")}>
+                  <SelectTrigger className="w-full md:w-44" aria-label="Filter by order type">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Order Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="Daybook">Daybook</SelectItem>
+                    <SelectItem value="Toughened">Toughened</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button variant="outline" aria-label="Export data" onClick={handleExport}>
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
