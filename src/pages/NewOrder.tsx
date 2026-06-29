@@ -111,7 +111,7 @@ const NewOrder = () => {
         estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
         total_amount: totalAmount || null,
         advance_amount: advanceAmount || null,
-        freight_amount: freightAmount || null,
+        order_type: orderType,
         notes: notes || null,
         files: [],
       });
