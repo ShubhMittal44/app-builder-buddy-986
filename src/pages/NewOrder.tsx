@@ -47,14 +47,14 @@ const NewOrder = () => {
   const [city, setCity] = useState("Lucknow");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [estimatedDuration, setEstimatedDuration] = useState("");
+  const [orderType, setOrderType] = useState<"Daybook" | "Toughened">("Daybook");
   const [totalAmount, setTotalAmount] = useState(0);
   const [advanceAmount, setAdvanceAmount] = useState(0);
-  const [freightAmount, setFreightAmount] = useState(0);
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const balance = totalAmount - advanceAmount + freightAmount;
+  const balance = totalAmount - advanceAmount;
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
                          location.pathname === '/new';
