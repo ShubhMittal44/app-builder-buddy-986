@@ -614,12 +614,16 @@ const OrderWorkspace = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="freight">Freight Amount</Label>
-                    <CurrencyInput
-                      id="freight"
-                      value={freightAmount}
-                      onChange={setFreightAmount}
-                    />
+                    <Label htmlFor="orderType">Order Type</Label>
+                    <Select value={orderType} onValueChange={(v) => setOrderType(v as "Daybook" | "Toughened")}>
+                      <SelectTrigger id="orderType">
+                        <SelectValue placeholder="Select order type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Daybook">Daybook</SelectItem>
+                        <SelectItem value="Toughened">Toughened</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -633,7 +637,7 @@ const OrderWorkspace = () => {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Balance = Total - Advance + Freight
+                    Balance = Total - Advance
                   </p>
                 </div>
               </div>
