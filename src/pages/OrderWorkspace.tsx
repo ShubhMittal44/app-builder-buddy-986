@@ -68,7 +68,7 @@ const OrderWorkspace = () => {
   const [estimatedDuration, setEstimatedDuration] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [advanceAmount, setAdvanceAmount] = useState(0);
-  const [freightAmount, setFreightAmount] = useState(0);
+  const [orderType, setOrderType] = useState<"Daybook" | "Toughened">("Daybook");
   const [notes, setNotes] = useState("");
   const [assignSite, setAssignSite] = useState<SiteEnum | "">("");
   const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
