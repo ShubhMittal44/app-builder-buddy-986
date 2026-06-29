@@ -443,9 +443,9 @@ const OrderWorkspace = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Freight</p>
+                    <p className="text-sm text-muted-foreground">Order Type</p>
                     <p className="text-lg font-semibold">
-                      {formatCurrency(freightAmount)}
+                      {orderType}
                     </p>
                   </div>
                   <div>
