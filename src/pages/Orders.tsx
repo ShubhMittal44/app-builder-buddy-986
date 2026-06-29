@@ -709,6 +709,11 @@ const Orders = () => {
                             <TableCell>
                               <StageBadge stage={order.stage} />
                             </TableCell>
+                            <TableCell>
+                              <Badge variant={orderType === "Toughened" ? "default" : "secondary"}>
+                                {orderType}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="font-mono font-medium">
                               {order.order_number}
                             </TableCell>
