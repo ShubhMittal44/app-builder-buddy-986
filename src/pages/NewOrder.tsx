@@ -315,6 +315,19 @@ const NewOrder = () => {
                       min="1"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="orderType">Order Type</Label>
+                    <Select value={orderType} onValueChange={(v) => setOrderType(v as "Daybook" | "Toughened")}>
+                      <SelectTrigger id="orderType">
+                        <SelectValue placeholder="Select order type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Daybook">Daybook</SelectItem>
+                        <SelectItem value="Toughened">Toughened</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Financial Information */}
