@@ -28,11 +28,12 @@ export const exportToCSV = (orders: Order[], filename: string = 'orders.csv') =>
 
   // Convert orders to CSV rows
   const rows = orders.map(order => {
-    const balance = (order.total_amount || 0) - (order.advance_amount || 0) + (order.freight_amount || 0);
+    const balance = (order.total_amount || 0) - (order.advance_amount || 0);
     
     return [
       order.order_number,
       order.stage,
+      (order as any).order_type || 'Daybook',
       order.customer_name,
       order.phone || '',
       order.address || '',
@@ -41,7 +42,6 @@ export const exportToCSV = (orders: Order[], filename: string = 'orders.csv') =>
       order.estimated_duration || '',
       order.total_amount || 0,
       order.advance_amount || 0,
-      order.freight_amount || 0,
       balance,
       order.assign_site || '',
       order.processing_site || '',
