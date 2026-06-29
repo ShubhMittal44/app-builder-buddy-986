@@ -259,7 +259,7 @@ const OrderWorkspace = () => {
         estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
         total_amount: totalAmount || null,
         advance_amount: advanceAmount || null,
-        freight_amount: freightAmount || null,
+        order_type: orderType,
         notes: notes || null,
         assign_site: assignSite || null,
         processing_site: processingSite || null,
