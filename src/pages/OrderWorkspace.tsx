@@ -15,6 +15,13 @@ import { StageBadge } from "@/components/ui/stage-badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import { toast } from "@/hooks/use-toast";
