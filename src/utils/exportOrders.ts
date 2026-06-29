@@ -10,6 +10,7 @@ export const exportToCSV = (orders: Order[], filename: string = 'orders.csv') =>
   const headers = [
     'Order Number',
     'Stage',
+    'Order Type',
     'Customer Name',
     'Phone',
     'Address',
@@ -18,7 +19,6 @@ export const exportToCSV = (orders: Order[], filename: string = 'orders.csv') =>
     'Estimated Duration',
     'Total Amount',
     'Advance Amount',
-    'Freight Amount',
     'Balance',
     'Assign Site',
     'Processing Site',
