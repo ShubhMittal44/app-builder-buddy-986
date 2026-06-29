@@ -225,7 +225,7 @@ const Orders = () => {
     });
 
     return filtered;
-  }, [orders, debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+  }, [orders, debouncedSearchQuery, stageFilter, orderTypeFilter, sortField, sortDirection]);
 
   const allFilteredSelected = useMemo(
     () => selectedIds.size > 0 && filteredOrders.every(o => selectedIds.has(o.id)),
