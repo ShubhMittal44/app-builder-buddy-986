@@ -333,7 +333,7 @@ const NewOrder = () => {
                 {/* Financial Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Financial Details</h3>
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="total">Total Amount</Label>
                       <CurrencyInput
@@ -351,15 +351,6 @@ const NewOrder = () => {
                         onChange={setAdvanceAmount}
                       />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="freight">Freight Amount</Label>
-                      <CurrencyInput
-                        id="freight"
-                        value={freightAmount}
-                        onChange={setFreightAmount}
-                      />
-                    </div>
                   </div>
 
                   <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
@@ -372,7 +363,7 @@ const NewOrder = () => {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Balance = Total - Advance + Freight
+                      Balance = Total - Advance
                     </p>
                   </div>
                 </div>
