@@ -235,7 +235,7 @@ export const useOrderMutations = () => {
         timeline: [...currentTimeline, newTimelineEntry] as any,
       };
       if (newStage === 'closed') {
-        updatePayload.advance_amount = Number(currentOrder.total_amount || 0) + Number((currentOrder as any).freight_amount || 0);
+        updatePayload.advance_amount = Number(currentOrder.total_amount || 0);
       }
 
       const { data, error } = await supabase
