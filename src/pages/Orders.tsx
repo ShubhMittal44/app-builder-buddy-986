@@ -175,6 +175,13 @@ const Orders = () => {
       filtered = filtered.filter((order) => order.stage === stageFilter);
     }
 
+    // Apply order type filter
+    if (orderTypeFilter !== "all") {
+      filtered = filtered.filter(
+        (order) => ((order as any).order_type || "Daybook") === orderTypeFilter
+      );
+    }
+
     // Sort orders
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
