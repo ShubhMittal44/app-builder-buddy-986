@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Search, Filter, Plus, FileDown, ArrowUpDown, Download, Trash2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -51,12 +52,24 @@ type SortDirection = "asc" | "desc";
 const Orders = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin } = useAuth();
   const { orders, loading, error, refetch } = useOrders();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
+  const orderTypeParam = searchParams.get("order_type");
+  const orderTypeFilter: "all" | "Daybook" | "Toughened" =
+    orderTypeParam === "Daybook" || orderTypeParam === "Toughened" ? orderTypeParam : "all";
+  const setOrderTypeFilter = (value: "all" | "Daybook" | "Toughened") => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value === "all") next.delete("order_type");
+      else next.set("order_type", value);
+      return next;
+    });
+  };
   const [sortField, setSortField] = useState<SortField>("orderDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
@@ -162,6 +175,13 @@ const Orders = () => {
       filtered = filtered.filter((order) => order.stage === stageFilter);
     }
 
+    // Apply order type filter
+    if (orderTypeFilter !== "all") {
+      filtered = filtered.filter(
+        (order) => ((order as any).order_type || "Daybook") === orderTypeFilter
+      );
+    }
+
     // Sort orders
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
@@ -188,8 +208,8 @@ const Orders = () => {
           bValue = b.total_amount || 0;
           break;
         case "balance":
-          const aBalance = (a.total_amount || 0) - (a.advance_amount || 0) + (a.freight_amount || 0);
-          const bBalance = (b.total_amount || 0) - (b.advance_amount || 0) + (b.freight_amount || 0);
+          const aBalance = (a.total_amount || 0) - (a.advance_amount || 0);
+          const bBalance = (b.total_amount || 0) - (b.advance_amount || 0);
           aValue = aBalance;
           bValue = bBalance;
           break;
@@ -205,7 +225,7 @@ const Orders = () => {
     });
 
     return filtered;
-  }, [orders, debouncedSearchQuery, stageFilter, sortField, sortDirection]);
+  }, [orders, debouncedSearchQuery, stageFilter, orderTypeFilter, sortField, sortDirection]);
 
   const allFilteredSelected = useMemo(
     () => selectedIds.size > 0 && filteredOrders.every(o => selectedIds.has(o.id)),
@@ -521,6 +541,17 @@ const Orders = () => {
                     <SelectItem value="closed">Closed</SelectItem>
                   </SelectContent>
                 </Select>
+                <Select value={orderTypeFilter} onValueChange={(value) => setOrderTypeFilter(value as "all" | "Daybook" | "Toughened")}>
+                  <SelectTrigger className="w-full md:w-44" aria-label="Filter by order type">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Order Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="Daybook">Daybook</SelectItem>
+                    <SelectItem value="Toughened">Toughened</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button variant="outline" aria-label="Export data" onClick={handleExport}>
                   <FileDown className="w-4 h-4 mr-2" />
                   Export
@@ -570,7 +601,7 @@ const Orders = () => {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No orders found</h3>
                   <p className="text-muted-foreground text-center">
-                    {searchQuery || stageFilter !== "all"
+                    {searchQuery || stageFilter !== "all" || orderTypeFilter !== "all"
                       ? "Try adjusting your search or filters"
                       : "No orders yet"}
                   </p>
@@ -590,6 +621,7 @@ const Orders = () => {
                           </TableHead>
                         )}
                         <TableHead>Stage</TableHead>
+                        <TableHead>Order Type</TableHead>
                         <TableHead className="font-mono">
                           <button
                             onClick={() => handleSort("orderNumber")}
@@ -636,7 +668,7 @@ const Orders = () => {
                           </button>
                         </TableHead>
                         <TableHead className="text-right">Advance</TableHead>
-                        <TableHead className="text-right">Freight</TableHead>
+                        
                         <TableHead className="text-right font-semibold">
                           <button
                             onClick={() => handleSort("balance")}
@@ -652,7 +684,8 @@ const Orders = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredOrders.map((order, index) => {
-                        const balance = (order.total_amount || 0) - (order.advance_amount || 0) + (order.freight_amount || 0);
+                        const balance = (order.total_amount || 0) - (order.advance_amount || 0);
+                        const orderType = ((order as any).order_type as string) || "Daybook";
                         return (
                           <TableRow
                             key={order.id}
@@ -676,6 +709,11 @@ const Orders = () => {
                             <TableCell>
                               <StageBadge stage={order.stage} />
                             </TableCell>
+                            <TableCell>
+                              <Badge variant={orderType === "Toughened" ? "default" : "secondary"}>
+                                {orderType}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="font-mono font-medium">
                               {order.order_number}
                             </TableCell>
@@ -689,9 +727,6 @@ const Orders = () => {
                             </TableCell>
                             <TableCell className="text-right">
                               {formatCurrency(order.advance_amount || 0)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(order.freight_amount || 0)}
                             </TableCell>
                             <TableCell className="text-right font-semibold">
                               {formatCurrency(balance)}

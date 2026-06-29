@@ -367,6 +367,7 @@ export type Database = {
           notes: string | null
           order_date: string
           order_number: number
+          order_type: string
           phone: string | null
           processing_site: Database["public"]["Enums"]["site_enum"] | null
           stage: Database["public"]["Enums"]["order_stage_enum"]
@@ -389,6 +390,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number?: number
+          order_type?: string
           phone?: string | null
           processing_site?: Database["public"]["Enums"]["site_enum"] | null
           stage?: Database["public"]["Enums"]["order_stage_enum"]
@@ -411,6 +413,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           order_number?: number
+          order_type?: string
           phone?: string | null
           processing_site?: Database["public"]["Enums"]["site_enum"] | null
           stage?: Database["public"]["Enums"]["order_stage_enum"]

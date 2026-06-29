@@ -15,6 +15,13 @@ import { StageBadge } from "@/components/ui/stage-badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import { toast } from "@/hooks/use-toast";
@@ -61,7 +68,7 @@ const OrderWorkspace = () => {
   const [estimatedDuration, setEstimatedDuration] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [advanceAmount, setAdvanceAmount] = useState(0);
-  const [freightAmount, setFreightAmount] = useState(0);
+  const [orderType, setOrderType] = useState<"Daybook" | "Toughened">("Daybook");
   const [notes, setNotes] = useState("");
   const [assignSite, setAssignSite] = useState<SiteEnum | "">("");
   const [processingSite, setProcessingSite] = useState<SiteEnum | "">("");
@@ -87,7 +94,7 @@ const OrderWorkspace = () => {
       setEstimatedDuration(order.estimated_duration?.toString() || "");
       setTotalAmount(order.total_amount || 0);
       setAdvanceAmount(order.advance_amount || 0);
-      setFreightAmount(order.freight_amount || 0);
+      setOrderType(((order as any).order_type as "Daybook" | "Toughened") || "Daybook");
       setNotes(order.notes || "");
       setAssignSite(order.assign_site || "");
       setProcessingSite(order.processing_site || "");
@@ -117,7 +124,7 @@ const OrderWorkspace = () => {
     );
   }
 
-  const balance = totalAmount - advanceAmount + freightAmount;
+  const balance = totalAmount - advanceAmount;
   const uploadedFiles = Array.isArray(order.files) 
     ? order.files as unknown as UploadedFile[]
     : [];
@@ -252,7 +259,7 @@ const OrderWorkspace = () => {
         estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
         total_amount: totalAmount || null,
         advance_amount: advanceAmount || null,
-        freight_amount: freightAmount || null,
+        order_type: orderType,
         notes: notes || null,
         assign_site: assignSite || null,
         processing_site: processingSite || null,
@@ -404,6 +411,7 @@ const OrderWorkspace = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <StageBadge stage={order.stage} />
+                    <Badge variant={orderType === "Toughened" ? "default" : "secondary"}>{orderType}</Badge>
                     <Badge variant="outline">{formatDate(order.order_date)}</Badge>
                     {order.city && <Badge variant="outline">{order.city}</Badge>}
                   </div>
@@ -435,9 +443,9 @@ const OrderWorkspace = () => {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Freight</p>
+                    <p className="text-sm text-muted-foreground">Order Type</p>
                     <p className="text-lg font-semibold">
-                      {formatCurrency(freightAmount)}
+                      {orderType}
                     </p>
                   </div>
                   <div>
@@ -606,12 +614,16 @@ const OrderWorkspace = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="freight">Freight Amount</Label>
-                    <CurrencyInput
-                      id="freight"
-                      value={freightAmount}
-                      onChange={setFreightAmount}
-                    />
+                    <Label htmlFor="orderType">Order Type</Label>
+                    <Select value={orderType} onValueChange={(v) => setOrderType(v as "Daybook" | "Toughened")}>
+                      <SelectTrigger id="orderType">
+                        <SelectValue placeholder="Select order type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Daybook">Daybook</SelectItem>
+                        <SelectItem value="Toughened">Toughened</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -625,7 +637,7 @@ const OrderWorkspace = () => {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Balance = Total - Advance + Freight
+                    Balance = Total - Advance
                   </p>
                 </div>
               </div>

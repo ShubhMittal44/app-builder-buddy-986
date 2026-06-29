@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { FileUpload } from "@/components/ui/file-upload";
 import { OrderStepper } from "@/components/OrderStepper";
@@ -40,14 +47,14 @@ const NewOrder = () => {
   const [city, setCity] = useState("Lucknow");
   const [orderDate, setOrderDate] = useState<Date>(new Date());
   const [estimatedDuration, setEstimatedDuration] = useState("");
+  const [orderType, setOrderType] = useState<"Daybook" | "Toughened">("Daybook");
   const [totalAmount, setTotalAmount] = useState(0);
   const [advanceAmount, setAdvanceAmount] = useState(0);
-  const [freightAmount, setFreightAmount] = useState(0);
   const [notes, setNotes] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const balance = totalAmount - advanceAmount + freightAmount;
+  const balance = totalAmount - advanceAmount;
   const isOnOrdersPage = location.pathname === '/orders' || 
                          location.pathname.startsWith('/orders/') || 
                          location.pathname === '/new';
@@ -104,7 +111,7 @@ const NewOrder = () => {
         estimated_duration: estimatedDuration ? parseInt(estimatedDuration) : null,
         total_amount: totalAmount || null,
         advance_amount: advanceAmount || null,
-        freight_amount: freightAmount || null,
+        order_type: orderType,
         notes: notes || null,
         files: [],
       });
@@ -308,12 +315,25 @@ const NewOrder = () => {
                       min="1"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="orderType">Order Type</Label>
+                    <Select value={orderType} onValueChange={(v) => setOrderType(v as "Daybook" | "Toughened")}>
+                      <SelectTrigger id="orderType">
+                        <SelectValue placeholder="Select order type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Daybook">Daybook</SelectItem>
+                        <SelectItem value="Toughened">Toughened</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Financial Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Financial Details</h3>
-                  <div className="grid md:grid-cols-3 gap-6">
+                  <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="total">Total Amount</Label>
                       <CurrencyInput
@@ -331,15 +351,6 @@ const NewOrder = () => {
                         onChange={setAdvanceAmount}
                       />
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="freight">Freight Amount</Label>
-                      <CurrencyInput
-                        id="freight"
-                        value={freightAmount}
-                        onChange={setFreightAmount}
-                      />
-                    </div>
                   </div>
 
                   <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
@@ -352,7 +363,7 @@ const NewOrder = () => {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Balance = Total - Advance + Freight
+                      Balance = Total - Advance
                     </p>
                   </div>
                 </div>
