@@ -94,7 +94,7 @@ const OrderWorkspace = () => {
       setEstimatedDuration(order.estimated_duration?.toString() || "");
       setTotalAmount(order.total_amount || 0);
       setAdvanceAmount(order.advance_amount || 0);
-      setFreightAmount(order.freight_amount || 0);
+      setOrderType(((order as any).order_type as "Daybook" | "Toughened") || "Daybook");
       setNotes(order.notes || "");
       setAssignSite(order.assign_site || "");
       setProcessingSite(order.processing_site || "");
