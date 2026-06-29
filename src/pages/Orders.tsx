@@ -728,9 +728,6 @@ const Orders = () => {
                             <TableCell className="text-right">
                               {formatCurrency(order.advance_amount || 0)}
                             </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(order.freight_amount || 0)}
-                            </TableCell>
                             <TableCell className="text-right font-semibold">
                               {formatCurrency(balance)}
                             </TableCell>
