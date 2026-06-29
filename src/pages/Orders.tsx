@@ -621,6 +621,7 @@ const Orders = () => {
                           </TableHead>
                         )}
                         <TableHead>Stage</TableHead>
+                        <TableHead>Order Type</TableHead>
                         <TableHead className="font-mono">
                           <button
                             onClick={() => handleSort("orderNumber")}
