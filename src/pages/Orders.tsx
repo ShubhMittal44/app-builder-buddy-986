@@ -52,12 +52,24 @@ type SortDirection = "asc" | "desc";
 const Orders = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin } = useAuth();
   const { orders, loading, error, refetch } = useOrders();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { notifyNewOrder } = useNotifications();
   const [searchQuery, setSearchQuery] = useState("");
   const [stageFilter, setStageFilter] = useState<OrderStage | "all">("all");
+  const orderTypeParam = searchParams.get("order_type");
+  const orderTypeFilter: "all" | "Daybook" | "Toughened" =
+    orderTypeParam === "Daybook" || orderTypeParam === "Toughened" ? orderTypeParam : "all";
+  const setOrderTypeFilter = (value: "all" | "Daybook" | "Toughened") => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value === "all") next.delete("order_type");
+      else next.set("order_type", value);
+      return next;
+    });
+  };
   const [sortField, setSortField] = useState<SortField>("orderDate");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedRowIndex, setSelectedRowIndex] = useState<number>(-1);
