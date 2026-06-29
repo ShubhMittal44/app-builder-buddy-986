@@ -208,8 +208,8 @@ const Orders = () => {
           bValue = b.total_amount || 0;
           break;
         case "balance":
-          const aBalance = (a.total_amount || 0) - (a.advance_amount || 0) + (a.freight_amount || 0);
-          const bBalance = (b.total_amount || 0) - (b.advance_amount || 0) + (b.freight_amount || 0);
+          const aBalance = (a.total_amount || 0) - (a.advance_amount || 0);
+          const bBalance = (b.total_amount || 0) - (b.advance_amount || 0);
           aValue = aBalance;
           bValue = bBalance;
           break;
