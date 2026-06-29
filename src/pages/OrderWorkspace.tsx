@@ -411,6 +411,7 @@ const OrderWorkspace = () => {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <StageBadge stage={order.stage} />
+                    <Badge variant={orderType === "Toughened" ? "default" : "secondary"}>{orderType}</Badge>
                     <Badge variant="outline">{formatDate(order.order_date)}</Badge>
                     {order.city && <Badge variant="outline">{order.city}</Badge>}
                   </div>
