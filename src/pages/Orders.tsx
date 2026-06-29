@@ -668,7 +668,7 @@ const Orders = () => {
                           </button>
                         </TableHead>
                         <TableHead className="text-right">Advance</TableHead>
-                        <TableHead className="text-right">Freight</TableHead>
+                        
                         <TableHead className="text-right font-semibold">
                           <button
                             onClick={() => handleSort("balance")}
