@@ -110,8 +110,8 @@ Deno.serve(async (req) => {
       to_stage: 'closed',
     };
 
-    // Mark as fully paid: advance covers total + freight so balance becomes 0
-    const fullyPaidAdvance = Number(order.total_amount ?? 0) + Number(order.freight_amount ?? 0);
+    // Mark as fully paid: advance covers total so balance becomes 0
+    const fullyPaidAdvance = Number(order.total_amount ?? 0);
 
     // Update order to closed with new timeline entry and consistent payment fields
     const { error: updateError } = await supabaseClient
