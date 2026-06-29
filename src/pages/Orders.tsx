@@ -601,7 +601,7 @@ const Orders = () => {
                   </div>
                   <h3 className="text-lg font-semibold mb-2">No orders found</h3>
                   <p className="text-muted-foreground text-center">
-                    {searchQuery || stageFilter !== "all"
+                    {searchQuery || stageFilter !== "all" || orderTypeFilter !== "all"
                       ? "Try adjusting your search or filters"
                       : "No orders yet"}
                   </p>
