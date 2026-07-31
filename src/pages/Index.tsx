@@ -50,14 +50,13 @@ const Index = () => {
               <Button size="sm" asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
-              {isAdmin && (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/admin/inventory">
-                    <Boxes className="w-4 h-4 mr-1.5" />
-                    Inventory
-                  </Link>
-                </Button>
-              )}
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/admin/inventory">
+                  <Boxes className="w-4 h-4 mr-1.5" />
+                  Inventory
+                </Link>
+              </Button>
+
               {isAdmin && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/customer-ledger">

@@ -11,9 +11,10 @@ export const MobileBottomNav = () => {
     { icon: Home, label: "Home", path: "/" },
     { icon: ClipboardList, label: "Orders", path: "/orders" },
     { icon: Plus, label: "Add", path: "/new" },
-    ...(isAdmin ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
+    { icon: Boxes, label: "Stock", path: "/admin/inventory" },
     ...(isAdmin ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
   ];
+
 
 
   const isActive = (path: string) => {
@@ -32,8 +33,9 @@ export const MobileBottomNav = () => {
     >
       <div className={cn(
         "grid h-16",
-        isAdmin ? "grid-cols-6" : "grid-cols-4"
+        isAdmin ? "grid-cols-6" : "grid-cols-5"
       )}>
+
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
