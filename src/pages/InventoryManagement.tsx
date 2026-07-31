@@ -313,7 +313,7 @@ const InventoryManagement = () => {
         {view === "types" && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={openAddType}><Plus className="w-4 h-4 mr-1" />Add Glass Type</Button>
+              {isAdmin && <Button onClick={openAddType}><Plus className="w-4 h-4 mr-1" />Add Glass Type</Button>}
               <Button variant="outline" onClick={() => exportAllInventory(glassTypes, variants, stockItems)}>
                 <FileDown className="w-4 h-4 mr-1" />Export All
               </Button>
