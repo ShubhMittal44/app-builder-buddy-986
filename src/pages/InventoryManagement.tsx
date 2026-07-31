@@ -441,9 +441,10 @@ const InventoryManagement = () => {
                     {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openVariant(v.id)}>View Sizes</Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditVariant(v)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button variant="outline" size="sm" onClick={() => setDeleteVariantId(v.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      {isAdmin && <Button variant="outline" size="sm" onClick={() => openEditVariant(v)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                      {isAdmin && <Button variant="outline" size="sm" onClick={() => setDeleteVariantId(v.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>}
                     </div>
+
                   </CardContent>
                 </Card>
               ))}
