@@ -386,7 +386,7 @@ const InventoryManagement = () => {
         {view === "type" && activeType && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={openAddVariant}><Plus className="w-4 h-4 mr-1" />Add Thickness + Company</Button>
+              {isAdmin && <Button onClick={openAddVariant}><Plus className="w-4 h-4 mr-1" />Add Thickness + Company</Button>}
               <Button variant="outline" onClick={() => exportGlassTypeInventory(activeType.glass_type_name, activeType.id, glassTypes, variants, stockItems)}>
                 <FileDown className="w-4 h-4 mr-1" />Export This Type
               </Button>
