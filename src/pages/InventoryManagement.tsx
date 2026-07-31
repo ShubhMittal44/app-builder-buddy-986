@@ -348,9 +348,10 @@ const InventoryManagement = () => {
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{t.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openType(t.id)}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => openEditType(t)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditType(t)}><Pencil className="w-4 h-4" /></Button>}
+                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
+
                       </TableRow>
                     ))}
                   </TableBody>
