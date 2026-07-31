@@ -455,7 +455,8 @@ const InventoryManagement = () => {
         {view === "variant" && activeVariant && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={openAddItem}><Plus className="w-4 h-4 mr-1" />Add Size / Sheets</Button>
+              {isAdmin && <Button onClick={openAddItem}><Plus className="w-4 h-4 mr-1" />Add Size / Sheets</Button>}
+
               <Badge variant="secondary" className="ml-auto">Total: {sheetsByVariant[activeVariant.id] ?? 0} sheets</Badge>
             </div>
 
