@@ -372,9 +372,10 @@ const InventoryManagement = () => {
                     {t.notes && <p className="text-xs text-muted-foreground">{t.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openType(t.id)}>View</Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditType(t)}><Pencil className="w-3.5 h-3.5" /></Button>
-                      <Button variant="outline" size="sm" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      {isAdmin && <Button variant="outline" size="sm" onClick={() => openEditType(t)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                      {isAdmin && <Button variant="outline" size="sm" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>}
                     </div>
+
                   </CardContent>
                 </Card>
               ))}
