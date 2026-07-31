@@ -504,10 +504,13 @@ const InventoryManagement = () => {
                       <Badge variant="secondary">{i.number_of_sheets} sheets</Badge>
                     </div>
                     {i.comment && <p className="text-xs text-muted-foreground">{i.comment}</p>}
+                    {isAdmin && (
                     <div className="flex gap-2 pt-1">
                       <Button variant="outline" size="sm" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-3.5 h-3.5 mr-1 text-destructive" />Delete</Button>
                     </div>
+                    )}
+
                   </CardContent>
                 </Card>
               ))}
