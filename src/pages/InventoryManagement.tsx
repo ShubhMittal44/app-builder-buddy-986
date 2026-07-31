@@ -484,9 +484,10 @@ const InventoryManagement = () => {
                         <TableCell className="text-right font-semibold">{i.number_of_sheets}</TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{i.comment}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>}
+                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
+
                       </TableRow>
                     ))}
                   </TableBody>
