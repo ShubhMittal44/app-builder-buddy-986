@@ -9,6 +9,7 @@ type ActionType = 'add_stock' | 'sale_stock';
 
 interface AdjustRequest {
   inventory_id: string;
+  stand_id: string;
   action_type: ActionType;
   quantity: number;
   remarks?: string;
@@ -68,12 +69,19 @@ Deno.serve(async (req) => {
     // Parse and validate input
     const body = (await req.json().catch(() => ({}))) as Partial<AdjustRequest>;
     const inventory_id = typeof body.inventory_id === 'string' ? body.inventory_id.trim() : '';
+    const stand_id = typeof body.stand_id === 'string' ? body.stand_id.trim() : '';
     const action_type = body.action_type;
     const quantity = Number(body.quantity);
     const remarks = typeof body.remarks === 'string' ? body.remarks.trim() : '';
 
     if (!inventory_id) {
       return new Response(JSON.stringify({ error: 'Missing inventory_id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    if (!stand_id) {
+      return new Response(JSON.stringify({ error: 'Please select a stand number' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -106,20 +114,53 @@ Deno.serve(async (req) => {
       });
     }
 
-    const previousQuantity = Number(item.number_of_sheets) || 0;
-    const qty = Math.trunc(quantity);
+    // Fetch the stand
+    const { data: stand, error: standError } = await supabaseAdmin
+      .from('stands')
+      .select('id, stand_number, is_active')
+      .eq('id', stand_id)
+      .maybeSingle();
 
-    if (action_type === 'sale_stock' && qty > previousQuantity) {
-      return new Response(JSON.stringify({ error: 'Insufficient stock available' }), {
-        status: 400,
+    if (standError || !stand) {
+      console.error('Stand not found:', { standError, stand_id });
+      return new Response(JSON.stringify({ error: 'Stand not found' }), {
+        status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Current stand quantity for this inventory item
+    const { data: standRow } = await supabaseAdmin
+      .from('inventory_stand_quantities')
+      .select('id, quantity')
+      .eq('inventory_id', inventory_id)
+      .eq('stand_id', stand_id)
+      .maybeSingle();
+
+    const previousQuantity = Number(item.number_of_sheets) || 0;
+    const previousStandQuantity = Number(standRow?.quantity ?? 0);
+    const qty = Math.trunc(quantity);
+
+    if (action_type === 'sale_stock') {
+      if (qty > previousStandQuantity) {
+        return new Response(JSON.stringify({ error: 'Insufficient stock available in selected stand.' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (qty > previousQuantity) {
+        return new Response(JSON.stringify({ error: 'Insufficient stock available' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     const changedQuantity = action_type === 'add_stock' ? qty : -qty;
     const newQuantity = previousQuantity + changedQuantity;
+    const newStandQuantity = previousStandQuantity + changedQuantity;
 
-    if (newQuantity < 0) {
+    if (newQuantity < 0 || newStandQuantity < 0) {
       return new Response(JSON.stringify({ error: 'Insufficient stock available' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -147,21 +188,53 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Upsert the stand-wise quantity
+    const standUpdate = standRow
+      ? await supabaseAdmin
+          .from('inventory_stand_quantities')
+          .update({ quantity: newStandQuantity, updated_at: new Date().toISOString() })
+          .eq('id', standRow.id)
+      : await supabaseAdmin
+          .from('inventory_stand_quantities')
+          .insert({ inventory_id, stand_id, quantity: newStandQuantity });
+
+    if (standUpdate.error) {
+      console.error('Stand quantity update error:', standUpdate.error);
+      // Roll back the total change to keep data consistent
+      await supabaseAdmin
+        .from('glass_stock_items')
+        .update({ number_of_sheets: previousQuantity })
+        .eq('id', inventory_id);
+      return new Response(JSON.stringify({ error: 'Failed to update stand quantity' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Insert history record
     const { error: logError } = await supabaseAdmin.from('inventory_activity_log').insert({
       glass_type_id: variant?.glass_type_id ?? null,
       glass_variant_id: item.glass_variant_id,
       glass_stock_item_id: inventory_id,
       action_type,
+      stand_id,
+      stand_number: stand.stand_number,
+      previous_total_quantity: previousQuantity,
+      new_total_quantity: newQuantity,
+      previous_stand_quantity: previousStandQuantity,
+      new_stand_quantity: newStandQuantity,
       old_value: {
         number_of_sheets: previousQuantity,
+        stand_quantity: previousStandQuantity,
         length: item.length,
         breadth: item.breadth,
         unit: item.unit,
       },
       new_value: {
         number_of_sheets: newQuantity,
+        stand_quantity: newStandQuantity,
         changed_quantity: changedQuantity,
+        stand_number: stand.stand_number,
         length: item.length,
         breadth: item.breadth,
         unit: item.unit,
@@ -181,6 +254,8 @@ Deno.serve(async (req) => {
         previous_quantity: previousQuantity,
         changed_quantity: changedQuantity,
         new_quantity: newQuantity,
+        previous_stand_quantity: previousStandQuantity,
+        new_stand_quantity: newStandQuantity,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

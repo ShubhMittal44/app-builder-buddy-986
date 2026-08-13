@@ -300,8 +300,14 @@ export type Database = {
           glass_type_id: string | null
           glass_variant_id: string | null
           id: string
+          new_stand_quantity: number | null
+          new_total_quantity: number | null
           new_value: Json | null
           old_value: Json | null
+          previous_stand_quantity: number | null
+          previous_total_quantity: number | null
+          stand_id: string | null
+          stand_number: string | null
         }
         Insert: {
           action_type: string
@@ -312,8 +318,14 @@ export type Database = {
           glass_type_id?: string | null
           glass_variant_id?: string | null
           id?: string
+          new_stand_quantity?: number | null
+          new_total_quantity?: number | null
           new_value?: Json | null
           old_value?: Json | null
+          previous_stand_quantity?: number | null
+          previous_total_quantity?: number | null
+          stand_id?: string | null
+          stand_number?: string | null
         }
         Update: {
           action_type?: string
@@ -324,8 +336,14 @@ export type Database = {
           glass_type_id?: string | null
           glass_variant_id?: string | null
           id?: string
+          new_stand_quantity?: number | null
+          new_total_quantity?: number | null
           new_value?: Json | null
           old_value?: Json | null
+          previous_stand_quantity?: number | null
+          previous_total_quantity?: number | null
+          stand_id?: string | null
+          stand_number?: string | null
         }
         Relationships: [
           {
@@ -347,6 +365,55 @@ export type Database = {
             columns: ["glass_variant_id"]
             isOneToOne: false
             referencedRelation: "glass_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_activity_log_stand_id_fkey"
+            columns: ["stand_id"]
+            isOneToOne: false
+            referencedRelation: "stands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_stand_quantities: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_id: string
+          quantity: number
+          stand_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_id: string
+          quantity?: number
+          stand_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_id?: string
+          quantity?: number
+          stand_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_stand_quantities_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "glass_stock_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_stand_quantities_stand_id_fkey"
+            columns: ["stand_id"]
+            isOneToOne: false
+            referencedRelation: "stands"
             referencedColumns: ["id"]
           },
         ]
@@ -605,6 +672,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stands: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          stand_number: string
+          stand_number_norm: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          stand_number: string
+          stand_number_norm: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          stand_number?: string
+          stand_number_norm?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       toughened_diary_entries: {
         Row: {
