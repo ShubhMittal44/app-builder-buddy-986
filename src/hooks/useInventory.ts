@@ -109,14 +109,18 @@ export function useInventory() {
   const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
   const [variants, setVariants] = useState<GlassVariant[]>([]);
   const [stockItems, setStockItems] = useState<GlassStockItem[]>([]);
+  const [stands, setStands] = useState<Stand[]>([]);
+  const [standQuantities, setStandQuantities] = useState<InventoryStandQuantity[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [typesRes, variantsRes, itemsRes] = await Promise.all([
+    const [typesRes, variantsRes, itemsRes, standsRes, sqRes] = await Promise.all([
       supabase.from('glass_types' as any).select('*').order('glass_type_name'),
       supabase.from('glass_variants' as any).select('*').order('created_at'),
       supabase.from('glass_stock_items' as any).select('*').order('created_at'),
+      supabase.from('stands' as any).select('*').order('stand_number'),
+      supabase.from('inventory_stand_quantities' as any).select('*'),
     ]);
     if (typesRes.error) toast({ title: 'Error', description: typesRes.error.message, variant: 'destructive' });
     else setGlassTypes((typesRes.data as any) ?? []);
@@ -124,6 +128,10 @@ export function useInventory() {
     else setVariants((variantsRes.data as any) ?? []);
     if (itemsRes.error) toast({ title: 'Error', description: itemsRes.error.message, variant: 'destructive' });
     else setStockItems((itemsRes.data as any) ?? []);
+    if (standsRes.error) toast({ title: 'Error', description: standsRes.error.message, variant: 'destructive' });
+    else setStands((standsRes.data as any) ?? []);
+    if (sqRes.error) toast({ title: 'Error', description: sqRes.error.message, variant: 'destructive' });
+    else setStandQuantities((sqRes.data as any) ?? []);
     setLoading(false);
   }, []);
 
@@ -150,6 +158,140 @@ export function useInventory() {
     glassTypes.forEach(t => { m[t.id] ??= 0; });
     return m;
   }, [variants, sheetsByVariant, glassTypes]);
+
+  // ---- Stand-wise computed maps ----
+  const standById = useMemo(
+    () => Object.fromEntries(stands.map(s => [s.id, s])) as Record<string, Stand>,
+    [stands]
+  );
+
+  // stand rows grouped by inventory (stock item) id
+  const standQtyByItem = useMemo(() => {
+    const m: Record<string, InventoryStandQuantity[]> = {};
+    standQuantities.forEach(q => { (m[q.inventory_id] ??= []).push(q); });
+    Object.values(m).forEach(list => list.sort((a, b) => Number(b.quantity) - Number(a.quantity)));
+    return m;
+  }, [standQuantities]);
+
+  // total stand-assigned sheets per stock item
+  const standTotalByItem = useMemo(() => {
+    const m: Record<string, number> = {};
+    standQuantities.forEach(q => { m[q.inventory_id] = (m[q.inventory_id] ?? 0) + Number(q.quantity); });
+    return m;
+  }, [standQuantities]);
+
+  // aggregated stand breakup per variant: stand_id -> qty
+  const standBreakupByVariant = useMemo(() => {
+    const itemVariant: Record<string, string> = {};
+    stockItems.forEach(i => { itemVariant[i.id] = i.glass_variant_id; });
+    const m: Record<string, Record<string, number>> = {};
+    standQuantities.forEach(q => {
+      const vId = itemVariant[q.inventory_id];
+      if (!vId) return;
+      (m[vId] ??= {});
+      m[vId][q.stand_id] = (m[vId][q.stand_id] ?? 0) + Number(q.quantity);
+    });
+    return m;
+  }, [standQuantities, stockItems]);
+
+  const standTotalByVariant = useMemo(() => {
+    const m: Record<string, number> = {};
+    Object.entries(standBreakupByVariant).forEach(([vId, breakup]) => {
+      m[vId] = Object.values(breakup).reduce((s, n) => s + n, 0);
+    });
+    return m;
+  }, [standBreakupByVariant]);
+
+  // ---- Stand master CRUD (admin only, enforced by RLS) ----
+  const createStand = async (payload: { stand_number: string; notes?: string | null }) => {
+    const { error } = await supabase.from('stands' as any).insert({
+      stand_number: payload.stand_number.trim(),
+      notes: payload.notes ?? null,
+    } as any);
+    if (error) {
+      console.error('Create stand error:', error);
+      const msg = error.code === '23505' ? 'A stand with this number already exists.' : error.message;
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      return false;
+    }
+    toast({ title: 'Stand added', description: payload.stand_number });
+    await fetchAll(); return true;
+  };
+
+  const updateStand = async (id: string, payload: { stand_number?: string; is_active?: boolean; notes?: string | null }) => {
+    const patch: any = { ...payload };
+    if (typeof patch.stand_number === 'string') patch.stand_number = patch.stand_number.trim();
+    const { error } = await supabase.from('stands' as any).update(patch).eq('id', id);
+    if (error) {
+      console.error('Update stand error:', error);
+      const msg = error.code === '23505' ? 'A stand with this number already exists.' : error.message;
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      return false;
+    }
+    toast({ title: 'Stand updated' });
+    await fetchAll(); return true;
+  };
+
+  const deleteStand = async (id: string) => {
+    const inUse = standQuantities.some(q => q.stand_id === id);
+    if (inUse) {
+      toast({
+        title: 'Stand in use',
+        description: 'This stand has inventory linked to it. Deactivate it instead of deleting.',
+        variant: 'destructive',
+      });
+      return false;
+    }
+    const { error } = await supabase.from('stands' as any).delete().eq('id', id);
+    if (error) {
+      console.error('Delete stand error:', error);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      return false;
+    }
+    toast({ title: 'Stand deleted' });
+    await fetchAll(); return true;
+  };
+
+  // ---- Stand breakup for a single stock item ----
+  // rows: [{ stand_id, quantity }] — replaces the whole breakup for that item.
+  const saveStandBreakup = async (inventoryId: string, rows: { stand_id: string; quantity: number }[]) => {
+    // merge duplicates defensively
+    const merged: Record<string, number> = {};
+    rows.forEach(r => {
+      if (!r.stand_id) return;
+      merged[r.stand_id] = (merged[r.stand_id] ?? 0) + Math.max(0, Math.trunc(Number(r.quantity) || 0));
+    });
+    const existing = standQuantities.filter(q => q.inventory_id === inventoryId);
+    const keep = new Set(Object.keys(merged));
+
+    try {
+      const toDelete = existing.filter(q => !keep.has(q.stand_id)).map(q => q.id);
+      if (toDelete.length) {
+        const { error } = await supabase.from('inventory_stand_quantities' as any).delete().in('id', toDelete);
+        if (error) throw error;
+      }
+      for (const [stand_id, quantity] of Object.entries(merged)) {
+        const row = existing.find(q => q.stand_id === stand_id);
+        if (row) {
+          const { error } = await supabase.from('inventory_stand_quantities' as any)
+            .update({ quantity } as any).eq('id', row.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('inventory_stand_quantities' as any)
+            .insert({ inventory_id: inventoryId, stand_id, quantity } as any);
+          if (error) throw error;
+        }
+      }
+      toast({ title: 'Stand breakup saved' });
+      await fetchAll();
+      return true;
+    } catch (err: any) {
+      console.error('Save stand breakup error:', err);
+      toast({ title: 'Error', description: err.message || 'Failed to save stand breakup', variant: 'destructive' });
+      return false;
+    }
+  };
+
 
   // ---- Glass type CRUD ----
   const createGlassType = async (payload: { glass_type_name: string; notes: string | null }) => {
