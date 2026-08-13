@@ -49,6 +49,25 @@ export interface GlassStockItem {
   updated_at: string;
 }
 
+export interface Stand {
+  id: string;
+  stand_number: string;
+  stand_number_norm: string;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InventoryStandQuantity {
+  id: string;
+  inventory_id: string;
+  stand_id: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ActivityLogEntry {
   id: string;
   glass_type_id: string | null;
@@ -60,7 +79,14 @@ export interface ActivityLogEntry {
   comment: string | null;
   changed_by: string | null;
   changed_at: string;
+  stand_id?: string | null;
+  stand_number?: string | null;
+  previous_total_quantity?: number | null;
+  new_total_quantity?: number | null;
+  previous_stand_quantity?: number | null;
+  new_stand_quantity?: number | null;
 }
+
 
 async function logActivity(entry: {
   glass_type_id?: string | null;
