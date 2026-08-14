@@ -489,28 +489,44 @@ const InventoryManagement = () => {
                       <TableHead className="text-right">Breadth</TableHead>
                       <TableHead>Unit</TableHead>
                       <TableHead className="text-right">Number of Sheets</TableHead>
+                      <TableHead>Stand Number / Stand-wise Sheets</TableHead>
                       <TableHead>Comment</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {variantItems.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No sizes yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No sizes yet.</TableCell></TableRow>
                     )}
-                    {variantItems.map(i => (
-                      <TableRow key={i.id}>
+                    {variantItems.map(i => {
+                      const rows = standQtyByItem[i.id] ?? [];
+                      const standTotal = standTotalByItem[i.id] ?? 0;
+                      const mismatch = standTotal !== Number(i.number_of_sheets);
+                      return (
+                      <TableRow key={i.id} className={mismatch ? "bg-amber-500/10" : undefined}>
                         <TableCell className="text-right">{i.length}</TableCell>
                         <TableCell className="text-right">{i.breadth}</TableCell>
                         <TableCell>{i.unit}</TableCell>
                         <TableCell className="text-right font-semibold">{i.number_of_sheets}</TableCell>
+                        <TableCell>
+                          <StandBreakupCell
+                            rows={rows.map(r => ({ stand_id: r.stand_id, quantity: Number(r.quantity) }))}
+                            standById={standById}
+                            total={standTotal}
+                            expected={Number(i.number_of_sheets)}
+                          />
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{i.comment}</TableCell>
                         <TableCell className="text-right">
+                          {isAdmin && <Button variant="ghost" size="icon" title="Edit stand breakup" onClick={() => setBreakupItem(i)}><Rows3 className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
 
                       </TableRow>
-                    ))}
+                      );
+                    })}
+
                   </TableBody>
                 </Table>
               </CardContent>
