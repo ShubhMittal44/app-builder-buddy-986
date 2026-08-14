@@ -15,12 +15,13 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import {
   useInventory, useInventoryActivityLog,
-  GlassType, GlassVariant, GlassStockItem, Unit,
+  GlassType, GlassVariant, GlassStockItem, Unit, Stand,
 } from "@/hooks/useInventory";
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
 import { ComboboxInput } from "@/components/ui/combobox-input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3 } from "lucide-react";
+
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
 
