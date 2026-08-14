@@ -417,11 +417,15 @@ export function useInventory() {
   return {
     glassTypes, variants, stockItems, loading,
     sheetsByVariant, variantsByType, sheetsByType,
+    stands, standQuantities, standById, standQtyByItem, standTotalByItem,
+    standBreakupByVariant, standTotalByVariant,
+    createStand, updateStand, deleteStand, saveStandBreakup,
     refetch: fetchAll,
     createGlassType, updateGlassType, deleteGlassType,
     createVariant, updateVariant, deleteVariant,
     createStockItem, updateStockItem, deleteStockItem, adjustStock,
   };
+
 }
 
 // ---- Activity log hook ----
