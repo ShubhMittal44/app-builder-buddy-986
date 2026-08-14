@@ -657,6 +657,12 @@ const InventoryManagement = () => {
       {/* ====== Add / Sale Stock ====== */}
       <StockAdjustDialog open={stockDialog} onOpenChange={setStockDialog} mode={stockMode} inv={inv} />
 
+      {/* ====== Manage Stands ====== */}
+      <ManageStandsDialog open={showStands} onOpenChange={setShowStands} inv={inv} />
+
+      {/* ====== Stand breakup editor ====== */}
+      <StandBreakupDialog item={breakupItem} onClose={() => setBreakupItem(null)} inv={inv} />
+
       {/* ====== Delete confirmations ====== */}
       <AlertDialog open={!!deleteTypeId} onOpenChange={() => setDeleteTypeId(null)}>
         <AlertDialogContent>
