@@ -51,7 +51,10 @@ type View = "types" | "type" | "variant";
 const InventoryManagement = () => {
   const { isAdmin } = useAuth();
   const inv = useInventory();
-  const { glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType } = inv;
+  const {
+    glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType,
+    stands, standById, standQtyByItem, standTotalByItem, standBreakupByVariant, standTotalByVariant,
+  } = inv;
 
   const [view, setView] = useState<View>("types");
   const [activeTypeId, setActiveTypeId] = useState<string | null>(null);
@@ -66,10 +69,17 @@ const InventoryManagement = () => {
   // ---- Activity log ----
   const [showActivity, setShowActivity] = useState(false);
 
+  // ---- Manage stands ----
+  const [showStands, setShowStands] = useState(false);
+
+  // ---- Stand breakup editor (per stock item) ----
+  const [breakupItem, setBreakupItem] = useState<GlassStockItem | null>(null);
+
   // ---- Stock adjust (Add / Sale) ----
   const [stockDialog, setStockDialog] = useState(false);
   const [stockMode, setStockMode] = useState<"add_stock" | "sale_stock">("add_stock");
   const openStockDialog = (mode: "add_stock" | "sale_stock") => { setStockMode(mode); setStockDialog(true); };
+
 
   // ---- Glass type dialog ----
   const [typeDialog, setTypeDialog] = useState(false);
