@@ -15,12 +15,13 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LoadingSpinner } from "@/components/LoadingStates";
 import {
   useInventory, useInventoryActivityLog,
-  GlassType, GlassVariant, GlassStockItem, Unit,
+  GlassType, GlassVariant, GlassStockItem, Unit, Stand,
 } from "@/hooks/useInventory";
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
 import { ComboboxInput } from "@/components/ui/combobox-input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3 } from "lucide-react";
+
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
 
@@ -50,7 +51,10 @@ type View = "types" | "type" | "variant";
 const InventoryManagement = () => {
   const { isAdmin } = useAuth();
   const inv = useInventory();
-  const { glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType } = inv;
+  const {
+    glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType,
+    stands, standById, standQtyByItem, standTotalByItem, standBreakupByVariant, standTotalByVariant,
+  } = inv;
 
   const [view, setView] = useState<View>("types");
   const [activeTypeId, setActiveTypeId] = useState<string | null>(null);
@@ -65,10 +69,17 @@ const InventoryManagement = () => {
   // ---- Activity log ----
   const [showActivity, setShowActivity] = useState(false);
 
+  // ---- Manage stands ----
+  const [showStands, setShowStands] = useState(false);
+
+  // ---- Stand breakup editor (per stock item) ----
+  const [breakupItem, setBreakupItem] = useState<GlassStockItem | null>(null);
+
   // ---- Stock adjust (Add / Sale) ----
   const [stockDialog, setStockDialog] = useState(false);
   const [stockMode, setStockMode] = useState<"add_stock" | "sale_stock">("add_stock");
   const openStockDialog = (mode: "add_stock" | "sale_stock") => { setStockMode(mode); setStockDialog(true); };
+
 
   // ---- Glass type dialog ----
   const [typeDialog, setTypeDialog] = useState(false);
@@ -247,10 +258,19 @@ const InventoryManagement = () => {
             <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
           <h1 className="text-lg md:text-2xl font-bold text-primary">Inventory Management</h1>
-          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setShowActivity(true)}>
-            <History className="w-4 h-4 md:mr-1" />
-            <span className="hidden md:inline">Activity Log</span>
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setShowStands(true)}>
+                <Rows3 className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:inline">Manage Stands</span>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setShowActivity(true)}>
+              <History className="w-4 h-4 md:mr-1" />
+              <span className="hidden md:inline">Activity Log</span>
+            </Button>
+          </div>
+
         </div>
       </header>
 
@@ -408,20 +428,34 @@ const InventoryManagement = () => {
                       <TableHead>Company Purchased</TableHead>
                       <TableHead>Color</TableHead>
                       <TableHead className="text-right">Total Sheets</TableHead>
+                      <TableHead>Stand Number / Stand-wise Sheets</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {typeVariants.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
                     )}
-                    {typeVariants.map(v => (
-                      <TableRow key={v.id} className="cursor-pointer" onClick={() => openVariant(v.id)}>
+                    {typeVariants.map(v => {
+                      const breakup = standBreakupByVariant[v.id] ?? {};
+                      const standTotal = standTotalByVariant[v.id] ?? 0;
+                      const expected = sheetsByVariant[v.id] ?? 0;
+                      const mismatch = standTotal !== expected;
+                      return (
+                      <TableRow key={v.id} className={`cursor-pointer ${mismatch ? "bg-amber-500/10" : ""}`} onClick={() => openVariant(v.id)}>
                         <TableCell className="font-medium">{v.thickness}</TableCell>
                         <TableCell>{v.company_purchased}</TableCell>
                         <TableCell>{v.color?.trim() ? v.color : "—"}</TableCell>
-                        <TableCell className="text-right font-semibold">{sheetsByVariant[v.id] ?? 0}</TableCell>
+                        <TableCell className="text-right font-semibold">{expected}</TableCell>
+                        <TableCell>
+                          <StandBreakupCell
+                            rows={Object.entries(breakup).map(([stand_id, quantity]) => ({ stand_id, quantity }))}
+                            standById={standById}
+                            total={standTotal}
+                            expected={expected}
+                          />
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openVariant(v.id)}><ChevronRight className="w-4 h-4" /></Button>
@@ -430,7 +464,9 @@ const InventoryManagement = () => {
                         </TableCell>
 
                       </TableRow>
-                    ))}
+                      );
+                    })}
+
                   </TableBody>
                 </Table>
               </CardContent>
@@ -478,28 +514,44 @@ const InventoryManagement = () => {
                       <TableHead className="text-right">Breadth</TableHead>
                       <TableHead>Unit</TableHead>
                       <TableHead className="text-right">Number of Sheets</TableHead>
+                      <TableHead>Stand Number / Stand-wise Sheets</TableHead>
                       <TableHead>Comment</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {variantItems.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No sizes yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No sizes yet.</TableCell></TableRow>
                     )}
-                    {variantItems.map(i => (
-                      <TableRow key={i.id}>
+                    {variantItems.map(i => {
+                      const rows = standQtyByItem[i.id] ?? [];
+                      const standTotal = standTotalByItem[i.id] ?? 0;
+                      const mismatch = standTotal !== Number(i.number_of_sheets);
+                      return (
+                      <TableRow key={i.id} className={mismatch ? "bg-amber-500/10" : undefined}>
                         <TableCell className="text-right">{i.length}</TableCell>
                         <TableCell className="text-right">{i.breadth}</TableCell>
                         <TableCell>{i.unit}</TableCell>
                         <TableCell className="text-right font-semibold">{i.number_of_sheets}</TableCell>
+                        <TableCell>
+                          <StandBreakupCell
+                            rows={rows.map(r => ({ stand_id: r.stand_id, quantity: Number(r.quantity) }))}
+                            standById={standById}
+                            total={standTotal}
+                            expected={Number(i.number_of_sheets)}
+                          />
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{i.comment}</TableCell>
                         <TableCell className="text-right">
+                          {isAdmin && <Button variant="ghost" size="icon" title="Edit stand breakup" onClick={() => setBreakupItem(i)}><Rows3 className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
 
                       </TableRow>
-                    ))}
+                      );
+                    })}
+
                   </TableBody>
                 </Table>
               </CardContent>
@@ -514,13 +566,21 @@ const InventoryManagement = () => {
                       <span className="font-semibold">{i.length} × {i.breadth} {i.unit}</span>
                       <Badge variant="secondary">{i.number_of_sheets} sheets</Badge>
                     </div>
+                    <StandBreakupCell
+                      rows={(standQtyByItem[i.id] ?? []).map(r => ({ stand_id: r.stand_id, quantity: Number(r.quantity) }))}
+                      standById={standById}
+                      total={standTotalByItem[i.id] ?? 0}
+                      expected={Number(i.number_of_sheets)}
+                    />
                     {i.comment && <p className="text-xs text-muted-foreground">{i.comment}</p>}
                     {isAdmin && (
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button variant="outline" size="sm" onClick={() => setBreakupItem(i)}><Rows3 className="w-3.5 h-3.5 mr-1" />Stands</Button>
                       <Button variant="outline" size="sm" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-3.5 h-3.5 mr-1 text-destructive" />Delete</Button>
                     </div>
                     )}
+
 
                   </CardContent>
                 </Card>
@@ -596,6 +656,12 @@ const InventoryManagement = () => {
 
       {/* ====== Add / Sale Stock ====== */}
       <StockAdjustDialog open={stockDialog} onOpenChange={setStockDialog} mode={stockMode} inv={inv} />
+
+      {/* ====== Manage Stands ====== */}
+      <ManageStandsDialog open={showStands} onOpenChange={setShowStands} inv={inv} />
+
+      {/* ====== Stand breakup editor ====== */}
+      <StandBreakupDialog item={breakupItem} onClose={() => setBreakupItem(null)} inv={inv} />
 
       {/* ====== Delete confirmations ====== */}
       <AlertDialog open={!!deleteTypeId} onOpenChange={() => setDeleteTypeId(null)}>
@@ -702,11 +768,17 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       detail += ` — color ${e.new_value.color}`;
     } else if ((e.action_type === "add_stock" || e.action_type === "sale_stock") && e.new_value) {
       const size = e.new_value.length != null ? ` ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit ?? ""}` : "";
-      const prev = e.old_value?.number_of_sheets ?? 0;
-      const next = e.new_value?.number_of_sheets ?? 0;
+      const prev = e.previous_total_quantity ?? e.old_value?.number_of_sheets ?? 0;
+      const next = e.new_total_quantity ?? e.new_value?.number_of_sheets ?? 0;
       const changed = e.new_value?.changed_quantity ?? (next - prev);
       const sign = changed > 0 ? `+${changed}` : `${changed}`;
+      const standName = e.stand_number ?? e.new_value?.stand_number;
       detail += ` —${size}, sheets ${prev} → ${next} (${sign})`;
+      if (standName) {
+        const ps = e.previous_stand_quantity ?? e.old_value?.stand_quantity;
+        const ns = e.new_stand_quantity ?? e.new_value?.stand_quantity;
+        detail += ` · ${standName}${ps != null && ns != null ? `: ${ps} → ${ns}` : ""}`;
+      }
     }
     return detail;
   };
@@ -741,23 +813,257 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
   );
 }
 
+// ====== Stand breakup display cell ======
+function StandBreakupCell({ rows, standById, total, expected }: {
+  rows: { stand_id: string; quantity: number }[];
+  standById: Record<string, Stand>;
+  total: number;
+  expected: number;
+}) {
+  const visible = rows.filter(r => r.quantity !== 0).sort((a, b) => b.quantity - a.quantity);
+  const mismatch = total !== expected;
+  return (
+    <div className="space-y-1">
+      {visible.length === 0 ? (
+        <span className="text-xs text-muted-foreground">No stand breakup</span>
+      ) : (
+        <div className="flex flex-wrap gap-1">
+          {visible.map(r => (
+            <Badge key={r.stand_id} variant="secondary" className="font-normal">
+              {standById[r.stand_id]?.stand_number ?? "Unknown stand"}: {r.quantity}
+            </Badge>
+          ))}
+        </div>
+      )}
+      {mismatch && (
+        <p className="flex items-center gap-1 text-xs text-amber-600">
+          <AlertTriangle className="w-3 h-3" />Stand total mismatch: {total} / {expected}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ====== Manage Stands dialog (admin only) ======
+function ManageStandsDialog({ open, onOpenChange, inv }: {
+  open: boolean; onOpenChange: (v: boolean) => void;
+  inv: ReturnType<typeof useInventory>;
+}) {
+  const { stands, standQuantities, createStand, updateStand, deleteStand } = inv;
+  const [newNumber, setNewNumber] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editNumber, setEditNumber] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  useEffect(() => { if (open) { setNewNumber(""); setEditId(null); setEditNumber(""); } }, [open]);
+
+  const usedStandIds = useMemo(
+    () => new Set(standQuantities.map(q => q.stand_id)),
+    [standQuantities]
+  );
+
+  const add = async () => {
+    if (!newNumber.trim()) return;
+    setBusy(true);
+    const ok = await createStand({ stand_number: newNumber });
+    setBusy(false);
+    if (ok) setNewNumber("");
+  };
+
+  const saveEdit = async () => {
+    if (!editId || !editNumber.trim()) return;
+    setBusy(true);
+    const ok = await updateStand(editId, { stand_number: editNumber });
+    setBusy(false);
+    if (ok) { setEditId(null); setEditNumber(""); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Manage Stands</DialogTitle></DialogHeader>
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newNumber}
+              onChange={e => setNewNumber(e.target.value)}
+              placeholder="e.g. Stand 1, A1, Rack 4"
+              onKeyDown={e => { if (e.key === "Enter") add(); }}
+            />
+            <Button onClick={add} disabled={busy || !newNumber.trim()}><Plus className="w-4 h-4 mr-1" />Add</Button>
+          </div>
+
+          <div className="space-y-2">
+            {stands.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">No stands yet.</p>}
+            {stands.map(s => (
+              <div key={s.id} className="flex items-center gap-2 border rounded-md px-3 py-2">
+                {editId === s.id ? (
+                  <>
+                    <Input value={editNumber} onChange={e => setEditNumber(e.target.value)} className="h-8" />
+                    <Button size="sm" onClick={saveEdit} disabled={busy}>Save</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>Cancel</Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium">{s.stand_number}</span>
+                    {!s.is_active && <Badge variant="secondary">Inactive</Badge>}
+                    <div className="ml-auto flex items-center gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => { setEditId(s.id); setEditNumber(s.stand_number); }}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => updateStand(s.id, { is_active: !s.is_active })}>
+                        {s.is_active ? "Deactivate" : "Activate"}
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled={usedStandIds.has(s.id)} title={usedStandIds.has(s.id) ? "Stand has inventory linked — deactivate instead" : "Delete"} onClick={() => setDeleteId(s.id)}>
+                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete stand?</AlertDialogTitle>
+              <AlertDialogDescription>This stand has no inventory linked to it. This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => { if (deleteId) { await deleteStand(deleteId); setDeleteId(null); } }}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ====== Stand breakup editor for one stock item (admin only) ======
+function StandBreakupDialog({ item, onClose, inv }: {
+  item: GlassStockItem | null;
+  onClose: () => void;
+  inv: ReturnType<typeof useInventory>;
+}) {
+  const { stands, standQtyByItem, saveStandBreakup } = inv;
+  const [rows, setRows] = useState<{ stand_id: string; quantity: string }[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!item) return;
+    const existing = standQtyByItem[item.id] ?? [];
+    setRows(existing.length
+      ? existing.map(r => ({ stand_id: r.stand_id, quantity: String(r.quantity) }))
+      : [{ stand_id: "", quantity: "" }]);
+  }, [item, standQtyByItem]);
+
+  const activeStands = useMemo(() => stands.filter(s => s.is_active), [stands]);
+  const total = rows.reduce((s, r) => s + (Math.max(0, Math.trunc(Number(r.quantity) || 0))), 0);
+  const expected = item ? Number(item.number_of_sheets) : 0;
+
+  const setRow = (idx: number, patch: Partial<{ stand_id: string; quantity: string }>) =>
+    setRows(rs => rs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+
+  const hasNegative = rows.some(r => Number(r.quantity) < 0);
+
+  const save = async () => {
+    if (!item) return;
+    const filled = rows.filter(r => r.stand_id);
+    const seen = new Set<string>();
+    for (const r of filled) {
+      if (seen.has(r.stand_id)) {
+        toast({ title: "Duplicate stand", description: "The same stand is listed twice — quantities will be merged.", });
+        break;
+      }
+      seen.add(r.stand_id);
+    }
+    if (hasNegative) {
+      toast({ title: "Invalid quantity", description: "Quantities cannot be negative.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    const ok = await saveStandBreakup(item.id, filled.map(r => ({ stand_id: r.stand_id, quantity: Number(r.quantity) || 0 })));
+    setSaving(false);
+    if (ok) onClose();
+  };
+
+  return (
+    <Dialog open={!!item} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Stand-wise Sheets{item ? ` — ${item.length}×${item.breadth} ${item.unit}` : ""}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          {activeStands.length === 0 && (
+            <p className="text-sm text-muted-foreground">No stands created yet. Use “Manage Stands” first.</p>
+          )}
+          {rows.map((r, idx) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <select
+                value={r.stand_id}
+                onChange={e => setRow(idx, { stand_id: e.target.value })}
+                className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Select stand</option>
+                {activeStands.map(s => <option key={s.id} value={s.id}>{s.stand_number}</option>)}
+              </select>
+              <Input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                className="w-28"
+                value={r.quantity}
+                onChange={e => setRow(idx, { quantity: e.target.value })}
+                placeholder="Sheets"
+              />
+              <Button variant="ghost" size="icon" onClick={() => setRows(rs => rs.filter((_, i) => i !== idx))}>
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" size="sm" onClick={() => setRows(rs => [...rs, { stand_id: "", quantity: "" }])}>
+            <Plus className="w-4 h-4 mr-1" />Add stand row
+          </Button>
+
+          <div className="rounded-md bg-muted px-3 py-2 text-sm">
+            Stand-wise total: <span className="font-semibold">{total}</span> / Total sheets: <span className="font-semibold">{expected}</span>
+            {total !== expected && (
+              <p className="flex items-center gap-1 text-amber-600 text-xs mt-1">
+                <AlertTriangle className="w-3 h-3" />Stand total mismatch: {total} / {expected} — you can still save.
+              </p>
+            )}
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ====== Add / Sale Stock dialog ======
 function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   mode: "add_stock" | "sale_stock";
   inv: ReturnType<typeof useInventory>;
 }) {
-  const { glassTypes, variants, stockItems, adjustStock } = inv;
+  const { glassTypes, variants, stockItems, stands, standById, standQtyByItem, adjustStock } = inv;
   const [typeId, setTypeId] = useState("");
   const [variantId, setVariantId] = useState("");
   const [itemId, setItemId] = useState("");
+  const [standId, setStandId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Reset whenever the dialog opens.
   useEffect(() => {
-    if (open) { setTypeId(""); setVariantId(""); setItemId(""); setQuantity(""); setRemarks(""); setSubmitting(false); }
+    if (open) { setTypeId(""); setVariantId(""); setItemId(""); setStandId(""); setQuantity(""); setRemarks(""); setSubmitting(false); }
   }, [open]);
 
   const typeVariants = useMemo(() => variants.filter(v => v.glass_type_id === typeId), [variants, typeId]);
@@ -766,59 +1072,92 @@ function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
   const currentStock = selectedItem ? Number(selectedItem.number_of_sheets) : 0;
 
   const isAdd = mode === "add_stock";
+
+  // Add Stock: any active stand. Sale Stock: only stands that hold stock for this item.
+  const itemStandRows = useMemo(() => (itemId ? standQtyByItem[itemId] ?? [] : []), [standQtyByItem, itemId]);
+  const standOptions = useMemo(() => {
+    if (isAdd) return stands.filter(s => s.is_active).map(s => ({ id: s.id, label: s.stand_number, qty: itemStandRows.find(r => r.stand_id === s.id)?.quantity ?? 0 }));
+    return itemStandRows
+      .filter(r => Number(r.quantity) > 0)
+      .map(r => ({ id: r.stand_id, label: standById[r.stand_id]?.stand_number ?? "Unknown stand", qty: Number(r.quantity) }));
+  }, [isAdd, stands, itemStandRows, standById]);
+
+  const currentStandQty = Number(itemStandRows.find(r => r.stand_id === standId)?.quantity ?? 0);
+
   const qtyNum = Number(quantity);
-  const insufficient = !isAdd && Number.isFinite(qtyNum) && qtyNum > currentStock;
-  const canSubmit = !!itemId && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && !submitting;
+  const insufficient = !isAdd && Number.isFinite(qtyNum) && qtyNum > currentStandQty;
+  const canSubmit = !!itemId && !!standId && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && !submitting;
 
   const submit = async () => {
     if (!canSubmit || !selectedItem) return;
     setSubmitting(true);
-    const ok = await adjustStock({ inventory_id: selectedItem.id, action_type: mode, quantity: Math.trunc(qtyNum), remarks: remarks.trim() || undefined });
+    const ok = await adjustStock({
+      inventory_id: selectedItem.id,
+      stand_id: standId,
+      action_type: mode,
+      quantity: Math.trunc(qtyNum),
+      remarks: remarks.trim() || undefined,
+    });
     setSubmitting(false);
     if (ok) onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isAdd ? "Add Stock" : "Sale Stock"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label>Glass Type *</Label>
-            <select value={typeId} onChange={e => { setTypeId(e.target.value); setVariantId(""); setItemId(""); }} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <select value={typeId} onChange={e => { setTypeId(e.target.value); setVariantId(""); setItemId(""); setStandId(""); }} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="">Select glass type</option>
               {glassTypes.map(t => <option key={t.id} value={t.id}>{t.glass_type_name}</option>)}
             </select>
           </div>
           <div>
             <Label>Thickness / Company / Color *</Label>
-            <select value={variantId} onChange={e => { setVariantId(e.target.value); setItemId(""); }} disabled={!typeId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
+            <select value={variantId} onChange={e => { setVariantId(e.target.value); setItemId(""); setStandId(""); }} disabled={!typeId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
               <option value="">Select variant</option>
               {typeVariants.map(v => <option key={v.id} value={v.id}>{variantLabel(v)}</option>)}
             </select>
           </div>
           <div>
             <Label>Size / Dimension *</Label>
-            <select value={itemId} onChange={e => setItemId(e.target.value)} disabled={!variantId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
+            <select value={itemId} onChange={e => { setItemId(e.target.value); setStandId(""); }} disabled={!variantId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
               <option value="">Select size</option>
               {variantItems.map(i => <option key={i.id} value={i.id}>{i.length}×{i.breadth} {i.unit} — {i.number_of_sheets} sheets</option>)}
             </select>
+          </div>
+          <div>
+            <Label>Stand Number *</Label>
+            <select value={standId} onChange={e => setStandId(e.target.value)} disabled={!itemId} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50">
+              <option value="">Select stand</option>
+              {standOptions.map(s => <option key={s.id} value={s.id}>{s.label} — {s.qty} sheets</option>)}
+            </select>
+            {itemId && standOptions.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {isAdd ? "No stands created yet. Use “Manage Stands” first." : "This item has no stand-wise stock yet. Add stock to a stand first."}
+              </p>
+            )}
           </div>
 
           {selectedItem && (
             <div className="rounded-md bg-muted px-3 py-2 text-sm">
               Current Stock: <span className="font-semibold">{currentStock} sheets</span>
+              {standId && <> · Stand {standById[standId]?.stand_number}: <span className="font-semibold">{currentStandQty} sheets</span></>}
             </div>
           )}
 
           <div>
             <Label>{isAdd ? "Quantity to Add" : "Quantity to Sale"} *</Label>
             <Input type="number" inputMode="numeric" min={1} value={quantity} onChange={e => setQuantity(e.target.value)} placeholder="e.g. 5" />
-            {insufficient && <p className="text-destructive text-xs mt-1">Insufficient stock available.</p>}
-            {selectedItem && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && (
-              <p className="text-muted-foreground text-xs mt-1">New stock will be {currentStock + (isAdd ? Math.trunc(qtyNum) : -Math.trunc(qtyNum))} sheets.</p>
+            {insufficient && <p className="text-destructive text-xs mt-1">Insufficient stock available in selected stand.</p>}
+            {selectedItem && standId && Number.isFinite(qtyNum) && qtyNum > 0 && !insufficient && (
+              <p className="text-muted-foreground text-xs mt-1">
+                New total will be {currentStock + (isAdd ? Math.trunc(qtyNum) : -Math.trunc(qtyNum))} sheets · stand {currentStandQty + (isAdd ? Math.trunc(qtyNum) : -Math.trunc(qtyNum))} sheets.
+              </p>
             )}
           </div>
           <div>
@@ -838,4 +1177,3 @@ function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
 }
 
 export default InventoryManagement;
-
