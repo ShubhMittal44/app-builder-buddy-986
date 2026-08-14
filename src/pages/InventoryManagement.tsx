@@ -768,11 +768,17 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       detail += ` — color ${e.new_value.color}`;
     } else if ((e.action_type === "add_stock" || e.action_type === "sale_stock") && e.new_value) {
       const size = e.new_value.length != null ? ` ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit ?? ""}` : "";
-      const prev = e.old_value?.number_of_sheets ?? 0;
-      const next = e.new_value?.number_of_sheets ?? 0;
+      const prev = e.previous_total_quantity ?? e.old_value?.number_of_sheets ?? 0;
+      const next = e.new_total_quantity ?? e.new_value?.number_of_sheets ?? 0;
       const changed = e.new_value?.changed_quantity ?? (next - prev);
       const sign = changed > 0 ? `+${changed}` : `${changed}`;
+      const standName = e.stand_number ?? e.new_value?.stand_number;
       detail += ` —${size}, sheets ${prev} → ${next} (${sign})`;
+      if (standName) {
+        const ps = e.previous_stand_quantity ?? e.old_value?.stand_quantity;
+        const ns = e.new_stand_quantity ?? e.new_value?.stand_quantity;
+        detail += ` · ${standName}${ps != null && ns != null ? `: ${ps} → ${ns}` : ""}`;
+      }
     }
     return detail;
   };
