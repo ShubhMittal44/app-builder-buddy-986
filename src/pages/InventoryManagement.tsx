@@ -566,13 +566,21 @@ const InventoryManagement = () => {
                       <span className="font-semibold">{i.length} × {i.breadth} {i.unit}</span>
                       <Badge variant="secondary">{i.number_of_sheets} sheets</Badge>
                     </div>
+                    <StandBreakupCell
+                      rows={(standQtyByItem[i.id] ?? []).map(r => ({ stand_id: r.stand_id, quantity: Number(r.quantity) }))}
+                      standById={standById}
+                      total={standTotalByItem[i.id] ?? 0}
+                      expected={Number(i.number_of_sheets)}
+                    />
                     {i.comment && <p className="text-xs text-muted-foreground">{i.comment}</p>}
                     {isAdmin && (
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button variant="outline" size="sm" onClick={() => setBreakupItem(i)}><Rows3 className="w-3.5 h-3.5 mr-1" />Stands</Button>
                       <Button variant="outline" size="sm" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Button>
                       <Button variant="outline" size="sm" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-3.5 h-3.5 mr-1 text-destructive" />Delete</Button>
                     </div>
                     )}
+
 
                   </CardContent>
                 </Card>
