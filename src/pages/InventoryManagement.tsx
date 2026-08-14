@@ -859,7 +859,7 @@ function ManageStandsDialog({ open, onOpenChange, inv }: {
   useEffect(() => { if (open) { setNewNumber(""); setEditId(null); setEditNumber(""); } }, [open]);
 
   const usedStandIds = useMemo(
-    () => new Set(standQuantities.filter(q => Number(q.quantity) !== 0 || true).map(q => q.stand_id)),
+    () => new Set(standQuantities.map(q => q.stand_id)),
     [standQuantities]
   );
 
