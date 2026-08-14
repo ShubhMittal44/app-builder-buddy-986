@@ -419,20 +419,34 @@ const InventoryManagement = () => {
                       <TableHead>Company Purchased</TableHead>
                       <TableHead>Color</TableHead>
                       <TableHead className="text-right">Total Sheets</TableHead>
+                      <TableHead>Stand Number / Stand-wise Sheets</TableHead>
                       <TableHead>Notes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {typeVariants.length === 0 && (
-                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No variants yet.</TableCell></TableRow>
                     )}
-                    {typeVariants.map(v => (
-                      <TableRow key={v.id} className="cursor-pointer" onClick={() => openVariant(v.id)}>
+                    {typeVariants.map(v => {
+                      const breakup = standBreakupByVariant[v.id] ?? {};
+                      const standTotal = standTotalByVariant[v.id] ?? 0;
+                      const expected = sheetsByVariant[v.id] ?? 0;
+                      const mismatch = standTotal !== expected;
+                      return (
+                      <TableRow key={v.id} className={`cursor-pointer ${mismatch ? "bg-amber-500/10" : ""}`} onClick={() => openVariant(v.id)}>
                         <TableCell className="font-medium">{v.thickness}</TableCell>
                         <TableCell>{v.company_purchased}</TableCell>
                         <TableCell>{v.color?.trim() ? v.color : "—"}</TableCell>
-                        <TableCell className="text-right font-semibold">{sheetsByVariant[v.id] ?? 0}</TableCell>
+                        <TableCell className="text-right font-semibold">{expected}</TableCell>
+                        <TableCell>
+                          <StandBreakupCell
+                            rows={Object.entries(breakup).map(([stand_id, quantity]) => ({ stand_id, quantity }))}
+                            standById={standById}
+                            total={standTotal}
+                            expected={expected}
+                          />
+                        </TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openVariant(v.id)}><ChevronRight className="w-4 h-4" /></Button>
@@ -441,7 +455,9 @@ const InventoryManagement = () => {
                         </TableCell>
 
                       </TableRow>
-                    ))}
+                      );
+                    })}
+
                   </TableBody>
                 </Table>
               </CardContent>
