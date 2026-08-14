@@ -378,7 +378,7 @@ export function useInventory() {
   };
 
   // ---- Stock adjustment (Add Stock / Sale Stock) via secure edge function ----
-  const adjustStock = async (payload: { inventory_id: string; action_type: 'add_stock' | 'sale_stock'; quantity: number; remarks?: string }) => {
+  const adjustStock = async (payload: { inventory_id: string; stand_id: string; action_type: 'add_stock' | 'sale_stock'; quantity: number; remarks?: string }) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
