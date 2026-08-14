@@ -258,10 +258,19 @@ const InventoryManagement = () => {
             <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
           <h1 className="text-lg md:text-2xl font-bold text-primary">Inventory Management</h1>
-          <Button variant="outline" size="sm" className="ml-auto" onClick={() => setShowActivity(true)}>
-            <History className="w-4 h-4 md:mr-1" />
-            <span className="hidden md:inline">Activity Log</span>
-          </Button>
+          <div className="ml-auto flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setShowStands(true)}>
+                <Rows3 className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:inline">Manage Stands</span>
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => setShowActivity(true)}>
+              <History className="w-4 h-4 md:mr-1" />
+              <span className="hidden md:inline">Activity Log</span>
+            </Button>
+          </div>
+
         </div>
       </header>
 
