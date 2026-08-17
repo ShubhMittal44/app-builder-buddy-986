@@ -16,7 +16,9 @@ export type ActionType =
   | 'updated_glass_type'
   | 'deleted_glass_type'
   | 'add_stock'
-  | 'sale_stock';
+  | 'sale_stock'
+  | 'import_inventory';
+
 
 export interface GlassType {
   id: string;
@@ -414,6 +416,158 @@ export function useInventory() {
     }
   };
 
+  // ---- Bulk import (admin only, enforced by RLS) ----
+  // items come from utils/inventoryImport buildImportPlan()
+  const importInventory = async (
+    items: {
+      glassType: string; thickness: string; company: string; color: string;
+      size: { length: number; breadth: number; unit: Unit };
+      totalSheets: number; notes: string;
+      stands: { standNumber: string; standId: string | null; sheets: number }[];
+    }[],
+    opts: { createMissingStands: boolean },
+  ): Promise<{ ok: boolean; created: number; updated: number; standsCreated: number; error?: string }> => {
+    const norm = (s: string) => (s ?? '').trim().toLowerCase().replace(/\s+/g, '');
+    let created = 0, updated = 0, standsCreated = 0;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id ?? null;
+
+      const typeMap = new Map(glassTypes.map(t => [norm(t.glass_type_name), t.id]));
+      const variantMap = new Map(variants.map(v => [`${v.glass_type_id}|${norm(v.thickness)}|${norm(v.company_purchased)}|${norm(v.color ?? '')}`, v.id]));
+      const itemMap = new Map(stockItems.map(i => [`${i.glass_variant_id}|${Number(i.length)}|${Number(i.breadth)}|${i.unit}`, i]));
+      const standMap = new Map(stands.map(s => [norm(s.stand_number), s.id]));
+      const sqMap = new Map(standQuantities.map(q => [`${q.inventory_id}|${q.stand_id}`, q]));
+
+      const logs: any[] = [];
+
+      for (const it of items) {
+        // 1. glass type
+        let typeId = typeMap.get(norm(it.glassType));
+        if (!typeId) {
+          const { data, error } = await supabase.from('glass_types' as any)
+            .insert({ glass_type_name: it.glassType.trim(), notes: null } as any).select('id').single();
+          if (error) throw error;
+          typeId = (data as any).id;
+          typeMap.set(norm(it.glassType), typeId!);
+        }
+
+        // 2. variant
+        const vKey = `${typeId}|${norm(it.thickness)}|${norm(it.company)}|${norm(it.color)}`;
+        let variantId = variantMap.get(vKey);
+        if (!variantId) {
+          const { data, error } = await supabase.from('glass_variants' as any).insert({
+            glass_type_id: typeId,
+            thickness: it.thickness || '-',
+            company_purchased: it.company || 'General',
+            color: it.color || null,
+            notes: null,
+          } as any).select('id').single();
+          if (error) throw error;
+          variantId = (data as any).id;
+          variantMap.set(vKey, variantId!);
+        }
+
+        // 3. stock item
+        const iKey = `${variantId}|${it.size.length}|${it.size.breadth}|${it.size.unit}`;
+        const existingItem = itemMap.get(iKey);
+        let stockItemId: string;
+        let prevTotal = 0;
+        if (existingItem) {
+          prevTotal = Number(existingItem.number_of_sheets);
+          stockItemId = existingItem.id;
+          const { error } = await supabase.from('glass_stock_items' as any)
+            .update({ number_of_sheets: it.totalSheets, comment: it.notes || existingItem.comment } as any)
+            .eq('id', stockItemId);
+          if (error) throw error;
+          updated++;
+        } else {
+          const { data, error } = await supabase.from('glass_stock_items' as any).insert({
+            glass_variant_id: variantId,
+            length: it.size.length,
+            breadth: it.size.breadth,
+            unit: it.size.unit,
+            number_of_sheets: it.totalSheets,
+            comment: it.notes || null,
+          } as any).select('id').single();
+          if (error) throw error;
+          stockItemId = (data as any).id;
+          created++;
+        }
+
+        // 4. stands + stand quantities
+        const usedStands: { standNumber: string; sheets: number; prev: number }[] = [];
+        for (const s of it.stands) {
+          let standId = s.standId ?? standMap.get(norm(s.standNumber)) ?? null;
+          if (!standId) {
+            if (!opts.createMissingStands) continue;
+            const { data, error } = await supabase.from('stands' as any)
+              .insert({ stand_number: s.standNumber.trim(), notes: 'Created during inventory import' } as any)
+              .select('id').single();
+            if (error) throw error;
+            standId = (data as any).id;
+            standMap.set(norm(s.standNumber), standId!);
+            standsCreated++;
+          }
+          const row = sqMap.get(`${stockItemId}|${standId}`);
+          const prev = row ? Number(row.quantity) : 0;
+          if (row) {
+            const { error } = await supabase.from('inventory_stand_quantities' as any)
+              .update({ quantity: s.sheets } as any).eq('id', row.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from('inventory_stand_quantities' as any)
+              .insert({ inventory_id: stockItemId, stand_id: standId, quantity: s.sheets } as any);
+            if (error) throw error;
+          }
+          usedStands.push({ standNumber: s.standNumber, sheets: s.sheets, prev });
+          logs.push({
+            glass_type_id: typeId,
+            glass_variant_id: variantId,
+            glass_stock_item_id: stockItemId,
+            action_type: 'import_inventory',
+            stand_id: standId,
+            stand_number: s.standNumber,
+            previous_total_quantity: prevTotal,
+            new_total_quantity: it.totalSheets,
+            previous_stand_quantity: prev,
+            new_stand_quantity: s.sheets,
+            comment: it.notes || null,
+            changed_by: userId,
+            new_value: { ...it, stands: undefined, stand: s },
+          });
+        }
+
+        if (usedStands.length === 0) {
+          logs.push({
+            glass_type_id: typeId,
+            glass_variant_id: variantId,
+            glass_stock_item_id: stockItemId,
+            action_type: 'import_inventory',
+            stand_id: null,
+            stand_number: 'No Stand Assigned',
+            previous_total_quantity: prevTotal,
+            new_total_quantity: it.totalSheets,
+            comment: it.notes || null,
+            changed_by: userId,
+            new_value: { ...it, stands: undefined },
+          });
+        }
+      }
+
+      if (logs.length) {
+        const { error } = await supabase.from('inventory_activity_log' as any).insert(logs as any);
+        if (error) console.error('Import activity log error:', error);
+      }
+
+      await fetchAll();
+      return { ok: true, created, updated, standsCreated };
+    } catch (err: any) {
+      console.error('Inventory import error:', err);
+      return { ok: false, created, updated, standsCreated, error: err.message || 'Import failed' };
+    }
+  };
+
   return {
     glassTypes, variants, stockItems, loading,
     sheetsByVariant, variantsByType, sheetsByType,
@@ -424,7 +578,9 @@ export function useInventory() {
     createGlassType, updateGlassType, deleteGlassType,
     createVariant, updateVariant, deleteVariant,
     createStockItem, updateStockItem, deleteStockItem, adjustStock,
+    importInventory,
   };
+
 
 }
 
