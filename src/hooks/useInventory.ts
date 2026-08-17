@@ -16,7 +16,9 @@ export type ActionType =
   | 'updated_glass_type'
   | 'deleted_glass_type'
   | 'add_stock'
-  | 'sale_stock';
+  | 'sale_stock'
+  | 'import_inventory';
+
 
 export interface GlassType {
   id: string;
