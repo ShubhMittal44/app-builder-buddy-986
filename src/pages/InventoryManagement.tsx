@@ -19,8 +19,9 @@ import {
 } from "@/hooks/useInventory";
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
 import { ComboboxInput } from "@/components/ui/combobox-input";
+import { ImportInventoryDialog } from "@/components/inventory/ImportInventoryDialog";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3, Upload } from "lucide-react";
 
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
@@ -71,6 +72,9 @@ const InventoryManagement = () => {
 
   // ---- Manage stands ----
   const [showStands, setShowStands] = useState(false);
+
+  // ---- Import inventory ----
+  const [showImport, setShowImport] = useState(false);
 
   // ---- Stand breakup editor (per stock item) ----
   const [breakupItem, setBreakupItem] = useState<GlassStockItem | null>(null);
@@ -259,6 +263,12 @@ const InventoryManagement = () => {
           </Button>
           <h1 className="text-lg md:text-2xl font-bold text-primary">Inventory Management</h1>
           <div className="ml-auto flex items-center gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+                <Upload className="w-4 h-4 md:mr-1" />
+                <span className="hidden md:inline">Import</span>
+              </Button>
+            )}
             {isAdmin && (
               <Button variant="outline" size="sm" onClick={() => setShowStands(true)}>
                 <Rows3 className="w-4 h-4 md:mr-1" />
@@ -660,6 +670,9 @@ const InventoryManagement = () => {
       {/* ====== Manage Stands ====== */}
       <ManageStandsDialog open={showStands} onOpenChange={setShowStands} inv={inv} />
 
+      {/* ====== Import inventory (admin only) ====== */}
+      {isAdmin && <ImportInventoryDialog open={showImport} onOpenChange={setShowImport} inv={inv} />}
+
       {/* ====== Stand breakup editor ====== */}
       <StandBreakupDialog item={breakupItem} onClose={() => setBreakupItem(null)} inv={inv} />
 
@@ -719,12 +732,14 @@ const ACTION_LABELS: Record<string, string> = {
   deleted_stock_item: "Deleted stock item",
   add_stock: "Add Stock",
   sale_stock: "Sale Stock",
+  import_inventory: "Inventory Import",
 };
 
 // Badge styling per action type (positive vs warning for stock movements).
 const ACTION_BADGE_CLASS: Record<string, string> = {
   add_stock: "bg-accent text-accent-foreground border-transparent",
   sale_stock: "bg-amber-500 text-white border-transparent",
+  import_inventory: "bg-primary text-primary-foreground border-transparent",
 };
 
 function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
@@ -766,6 +781,12 @@ function ActivityLogDialog({ open, onOpenChange, glassTypes, variants }: {
       }
     } else if (e.action_type === "created_variant" && e.new_value?.color?.trim()) {
       detail += ` — color ${e.new_value.color}`;
+    } else if (e.action_type === "import_inventory") {
+      const size = e.new_value?.size ? ` ${e.new_value.size.length}×${e.new_value.size.breadth} ${e.new_value.size.unit}` : "";
+      detail += ` —${size}, total sheets ${e.previous_total_quantity ?? 0} → ${e.new_total_quantity ?? 0}`;
+      const standName = e.stand_number ?? "No Stand Assigned";
+      detail += ` · ${standName}`;
+      if (e.new_stand_quantity != null) detail += `: ${e.previous_stand_quantity ?? 0} → ${e.new_stand_quantity}`;
     } else if ((e.action_type === "add_stock" || e.action_type === "sale_stock") && e.new_value) {
       const size = e.new_value.length != null ? ` ${e.new_value.length}×${e.new_value.breadth} ${e.new_value.unit ?? ""}` : "";
       const prev = e.previous_total_quantity ?? e.old_value?.number_of_sheets ?? 0;
