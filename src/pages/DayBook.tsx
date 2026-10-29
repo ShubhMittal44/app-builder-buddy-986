@@ -225,6 +225,10 @@ function DayBookTab({
     return { total: totalAmt, advance: advanceAmt, balance: totalAmt - advanceAmt, count: entries.length };
   }, [entries]);
 
+  const { isAdmin, can } = useAuth();
+  const canAdd = can('daybook', 'add');
+  const canEdit = can('daybook', 'edit');
+
   // Entry dialog
   const [dialog, setDialog] = useState(false);
   const [editEntry, setEditEntry] = useState<DayBookEntry | null>(null);
@@ -334,7 +338,7 @@ function DayBookTab({
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}><FileDown className="w-4 h-4 mr-1" />CSV</Button>
-          <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" />Add Entry</Button>
+          {canAdd && <Button size="sm" onClick={openAdd}><Plus className="w-4 h-4 mr-1" />Add Entry</Button>}
         </div>
       </div>
 
@@ -373,12 +377,12 @@ function DayBookTab({
                     <TableCell className="max-w-[120px] truncate text-muted-foreground">{e.notes ?? ""}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)}>
+                        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)}>
                           <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(e.id)}>
+                        </Button>}
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(e.id)}>
                           <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        </Button>}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -459,7 +463,7 @@ function DayBookTab({
 
 // ---- Main DayBook Page ----
 const DayBook = () => {
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>("daybook");
 
   // Default date
@@ -482,7 +486,7 @@ const DayBook = () => {
     return c;
   }, [createClient]);
 
-  if (!isAdmin) return null;
+  if (!can('daybook', 'view')) return null;
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">

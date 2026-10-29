@@ -873,6 +873,7 @@ function ManageStandsDialog({ open, onOpenChange, inv }: {
   inv: ReturnType<typeof useInventory>;
 }) {
   const { stands, standQuantities, createStand, updateStand, deleteStand } = inv;
+  const { isAdmin } = useAuth();
   const [newNumber, setNewNumber] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editNumber, setEditNumber] = useState("");
@@ -938,9 +939,9 @@ function ManageStandsDialog({ open, onOpenChange, inv }: {
                       <Button size="sm" variant="ghost" onClick={() => updateStand(s.id, { is_active: !s.is_active })}>
                         {s.is_active ? "Deactivate" : "Activate"}
                       </Button>
-                      <Button size="sm" variant="ghost" disabled={usedStandIds.has(s.id)} title={usedStandIds.has(s.id) ? "Stand has inventory linked — deactivate instead" : "Delete"} onClick={() => setDeleteId(s.id)}>
+                      {isAdmin && <Button size="sm" variant="ghost" disabled={usedStandIds.has(s.id)} title={usedStandIds.has(s.id) ? "Stand has inventory linked — deactivate instead" : "Delete"} onClick={() => setDeleteId(s.id)}>
                         <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                      </Button>
+                      </Button>}
                     </div>
                   </>
                 )}
