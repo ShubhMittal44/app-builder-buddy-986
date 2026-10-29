@@ -50,7 +50,9 @@ const variantLabel = (v: { thickness: string; company_purchased: string; color: 
 type View = "types" | "type" | "variant";
 
 const InventoryManagement = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, can } = useAuth();
+  const canAddInv = can('inventory', 'add');
+  const canEditInv = can('inventory', 'edit');
   const inv = useInventory();
   const {
     glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType,
@@ -263,13 +265,13 @@ const InventoryManagement = () => {
           </Button>
           <h1 className="text-lg md:text-2xl font-bold text-primary">Inventory Management</h1>
           <div className="ml-auto flex items-center gap-2">
-            {isAdmin && (
+            {canAddInv && canEditInv && (
               <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
                 <Upload className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline">Import</span>
               </Button>
             )}
-            {isAdmin && (
+            {canEditInv && (
               <Button variant="outline" size="sm" onClick={() => setShowStands(true)}>
                 <Rows3 className="w-4 h-4 md:mr-1" />
                 <span className="hidden md:inline">Manage Stands</span>
@@ -330,14 +332,14 @@ const InventoryManagement = () => {
         </div>
 
         {/* Stock adjustment actions */}
-        {isAdmin ? (
+        {canAddInv || canEditInv ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => openStockDialog("add_stock")}>
+            {canAddInv && <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => openStockDialog("add_stock")}>
               <PackagePlus className="w-4 h-4 mr-1" />Add Stock
-            </Button>
-            <Button variant="secondary" onClick={() => openStockDialog("sale_stock")}>
+            </Button>}
+            {canEditInv && <Button variant="secondary" onClick={() => openStockDialog("sale_stock")}>
               <PackageMinus className="w-4 h-4 mr-1" />Sale Stock
-            </Button>
+            </Button>}
           </div>
         ) : (
           <Badge variant="secondary">View only — contact an admin to change stock</Badge>
@@ -348,7 +350,7 @@ const InventoryManagement = () => {
         {view === "types" && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              {isAdmin && <Button onClick={openAddType}><Plus className="w-4 h-4 mr-1" />Add Glass Type</Button>}
+              {canAddInv && <Button onClick={openAddType}><Plus className="w-4 h-4 mr-1" />Add Glass Type</Button>}
               <Button variant="outline" onClick={() => exportAllInventory(glassTypes, variants, stockItems)}>
                 <FileDown className="w-4 h-4 mr-1" />Export All
               </Button>
@@ -383,7 +385,7 @@ const InventoryManagement = () => {
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{t.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openType(t.id)}><ChevronRight className="w-4 h-4" /></Button>
-                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditType(t)}><Pencil className="w-4 h-4" /></Button>}
+                          {canEditInv && <Button variant="ghost" size="icon" onClick={() => openEditType(t)}><Pencil className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
 
@@ -408,7 +410,7 @@ const InventoryManagement = () => {
                     {t.notes && <p className="text-xs text-muted-foreground">{t.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openType(t.id)}>View</Button>
-                      {isAdmin && <Button variant="outline" size="sm" onClick={() => openEditType(t)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                      {canEditInv && <Button variant="outline" size="sm" onClick={() => openEditType(t)}><Pencil className="w-3.5 h-3.5" /></Button>}
                       {isAdmin && <Button variant="outline" size="sm" onClick={() => setDeleteTypeId(t.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>}
                     </div>
 
@@ -423,7 +425,7 @@ const InventoryManagement = () => {
         {view === "type" && activeType && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              {isAdmin && <Button onClick={openAddVariant}><Plus className="w-4 h-4 mr-1" />Add Thickness + Company</Button>}
+              {canAddInv && <Button onClick={openAddVariant}><Plus className="w-4 h-4 mr-1" />Add Thickness + Company</Button>}
               <Button variant="outline" onClick={() => exportGlassTypeInventory(activeType.glass_type_name, activeType.id, glassTypes, variants, stockItems)}>
                 <FileDown className="w-4 h-4 mr-1" />Export This Type
               </Button>
@@ -469,7 +471,7 @@ const InventoryManagement = () => {
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{v.notes}</TableCell>
                         <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                           <Button variant="ghost" size="icon" onClick={() => openVariant(v.id)}><ChevronRight className="w-4 h-4" /></Button>
-                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditVariant(v)}><Pencil className="w-4 h-4" /></Button>}
+                          {canEditInv && <Button variant="ghost" size="icon" onClick={() => openEditVariant(v)}><Pencil className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteVariantId(v.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
 
@@ -495,7 +497,7 @@ const InventoryManagement = () => {
                     {v.notes && <p className="text-xs text-muted-foreground">{v.notes}</p>}
                     <div className="flex gap-2 pt-1" onClick={e => e.stopPropagation()}>
                       <Button variant="outline" size="sm" onClick={() => openVariant(v.id)}>View Sizes</Button>
-                      {isAdmin && <Button variant="outline" size="sm" onClick={() => openEditVariant(v)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                      {canEditInv && <Button variant="outline" size="sm" onClick={() => openEditVariant(v)}><Pencil className="w-3.5 h-3.5" /></Button>}
                       {isAdmin && <Button variant="outline" size="sm" onClick={() => setDeleteVariantId(v.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>}
                     </div>
 
@@ -510,7 +512,7 @@ const InventoryManagement = () => {
         {view === "variant" && activeVariant && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              {isAdmin && <Button onClick={openAddItem}><Plus className="w-4 h-4 mr-1" />Add Size / Sheets</Button>}
+              {canAddInv && <Button onClick={openAddItem}><Plus className="w-4 h-4 mr-1" />Add Size / Sheets</Button>}
 
               <Badge variant="secondary" className="ml-auto">Total: {sheetsByVariant[activeVariant.id] ?? 0} sheets</Badge>
             </div>
@@ -553,8 +555,8 @@ const InventoryManagement = () => {
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm max-w-[200px] truncate">{i.comment}</TableCell>
                         <TableCell className="text-right">
-                          {isAdmin && <Button variant="ghost" size="icon" title="Edit stand breakup" onClick={() => setBreakupItem(i)}><Rows3 className="w-4 h-4" /></Button>}
-                          {isAdmin && <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>}
+                          {canEditInv && <Button variant="ghost" size="icon" title="Edit stand breakup" onClick={() => setBreakupItem(i)}><Rows3 className="w-4 h-4" /></Button>}
+                          {canEditInv && <Button variant="ghost" size="icon" onClick={() => openEditItem(i)}><Pencil className="w-4 h-4" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                         </TableCell>
 
@@ -583,11 +585,11 @@ const InventoryManagement = () => {
                       expected={Number(i.number_of_sheets)}
                     />
                     {i.comment && <p className="text-xs text-muted-foreground">{i.comment}</p>}
-                    {isAdmin && (
+                    {(canEditInv || isAdmin) && (
                     <div className="flex flex-wrap gap-2 pt-1">
-                      <Button variant="outline" size="sm" onClick={() => setBreakupItem(i)}><Rows3 className="w-3.5 h-3.5 mr-1" />Stands</Button>
-                      <Button variant="outline" size="sm" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Button>
-                      <Button variant="outline" size="sm" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-3.5 h-3.5 mr-1 text-destructive" />Delete</Button>
+                      {canEditInv && <Button variant="outline" size="sm" onClick={() => setBreakupItem(i)}><Rows3 className="w-3.5 h-3.5 mr-1" />Stands</Button>}
+                      {canEditInv && <Button variant="outline" size="sm" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5 mr-1" />Edit</Button>}
+                      {isAdmin && <Button variant="outline" size="sm" onClick={() => setDeleteItemId(i.id)}><Trash2 className="w-3.5 h-3.5 mr-1 text-destructive" />Delete</Button>}
                     </div>
                     )}
 
@@ -671,7 +673,7 @@ const InventoryManagement = () => {
       <ManageStandsDialog open={showStands} onOpenChange={setShowStands} inv={inv} />
 
       {/* ====== Import inventory (admin only) ====== */}
-      {isAdmin && <ImportInventoryDialog open={showImport} onOpenChange={setShowImport} inv={inv} />}
+      {canAddInv && canEditInv && <ImportInventoryDialog open={showImport} onOpenChange={setShowImport} inv={inv} />}
 
       {/* ====== Stand breakup editor ====== */}
       <StandBreakupDialog item={breakupItem} onClose={() => setBreakupItem(null)} inv={inv} />
