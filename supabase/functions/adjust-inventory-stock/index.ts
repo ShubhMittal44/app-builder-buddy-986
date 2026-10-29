@@ -51,16 +51,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify admin via RLS-protected profiles table (scoped to this user)
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('user_id', userData.user.id)
-      .maybeSingle();
-
-    if (profileError || !profile || profile.role !== 'admin') {
-      console.log('Permission denied (adjust stock):', { profileError, profile });
-      return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
+    // Verify module permission: Add Stock needs inventory "add", Sale Stock needs inventory "edit"
+    const peek = await req.clone().json().catch(() => ({}));
+    const needed = peek?.action_type === 'sale_stock' ? 'edit' : 'add';
+    const { data: allowed, error: permError } = await supabaseAdmin.rpc('has_module_perm', {
+      _user_id: userData.user.id, _module: 'inventory', _action: needed,
+    });
+    if (permError || allowed !== true) {
+      console.log('Permission denied (adjust stock):', { permError, needed });
+      return new Response(JSON.stringify({ error: 'You do not have permission for this stock action' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
