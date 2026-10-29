@@ -534,6 +534,7 @@ export type Database = {
           created_at: string | null
           display_name: string | null
           email: string
+          is_active: boolean
           role: Database["public"]["Enums"]["role_enum"]
           updated_at: string | null
           user_id: string
@@ -543,6 +544,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email: string
+          is_active?: boolean
           role?: Database["public"]["Enums"]["role_enum"]
           updated_at?: string | null
           user_id: string
@@ -552,6 +554,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string | null
           email?: string
+          is_active?: boolean
           role?: Database["public"]["Enums"]["role_enum"]
           updated_at?: string | null
           user_id?: string
@@ -747,6 +750,83 @@ export type Database = {
           },
         ]
       }
+      user_admin_audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_module_permissions: {
+        Row: {
+          can_add: boolean
+          can_edit: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          module_key: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          can_add?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module_key: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          can_add?: boolean
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_module_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       vehicle_transactions: {
         Row: {
           amount: number
@@ -823,6 +903,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_module_perm: {
+        Args: { _action: string; _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["role_enum"]
