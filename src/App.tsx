@@ -43,15 +43,15 @@ const App = () => (
             
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/new" element={<ProtectedRoute><NewOrder /></ProtectedRoute>} />
-            <Route path="/orders/:id" element={<ProtectedRoute><OrderWorkspace /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute module="orders"><Orders /></ProtectedRoute>} />
+            <Route path="/new" element={<ProtectedRoute module="orders" action="add"><NewOrder /></ProtectedRoute>} />
+            <Route path="/orders/:id" element={<ProtectedRoute module="orders"><OrderWorkspace /></ProtectedRoute>} />
             
             <Route path="/admin/staff-management" element={<ProtectedRoute requireAdmin><StaffManagement /></ProtectedRoute>} />
-            <Route path="/admin/inventory" element={<ProtectedRoute><InventoryManagement /></ProtectedRoute>} />
-            <Route path="/admin/customer-ledger" element={<ProtectedRoute requireAdmin><CustomerLedger /></ProtectedRoute>} />
-            <Route path="/admin/customer-ledger/:id" element={<ProtectedRoute requireAdmin><CustomerLedgerDetail /></ProtectedRoute>} />
-            <Route path="/admin/daybook" element={<ProtectedRoute requireAdmin><DayBook /></ProtectedRoute>} />
+            <Route path="/admin/inventory" element={<ProtectedRoute module="inventory"><InventoryManagement /></ProtectedRoute>} />
+            <Route path="/admin/customer-ledger" element={<ProtectedRoute module="customer_ledger"><CustomerLedger /></ProtectedRoute>} />
+            <Route path="/admin/customer-ledger/:id" element={<ProtectedRoute module="customer_ledger"><CustomerLedgerDetail /></ProtectedRoute>} />
+            <Route path="/admin/daybook" element={<ProtectedRoute module="daybook"><DayBook /></ProtectedRoute>} />
             
             {/* Admin-only routes */}
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />
