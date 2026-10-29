@@ -53,7 +53,7 @@ const Orders = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAdmin } = useAuth();
+  const { isAdmin, can } = useAuth();
   const { orders, loading, error, refetch } = useOrders();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { notifyNewOrder } = useNotifications();
@@ -492,12 +492,14 @@ const Orders = () => {
                   <Link to="/orders">Orders</Link>
                 </Button>
               )}
+              {can('orders', 'add') && (
               <Button asChild>
                 <Link to="/new">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Order
                 </Link>
               </Button>
+              )}
             </nav>
           </div>
         </div>

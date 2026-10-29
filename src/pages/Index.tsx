@@ -29,7 +29,8 @@ const adminModules = [
 ];
 
 const Index = () => {
-  const { isAdmin, signOut } = useAuth();
+  const { isAdmin, can, signOut } = useAuth();
+  const visibleModules = adminModules.filter((m) => m.path === '/admin/daybook' ? can('daybook', 'view') : isAdmin);
 
 
 
@@ -44,20 +45,26 @@ const Index = () => {
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/">Home</Link>
               </Button>
+              {can('orders', 'view') && (
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/orders">Orders</Link>
               </Button>
+              )}
+              {can('orders', 'add') && (
               <Button size="sm" asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
+              )}
+              {can('inventory', 'view') && (
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/admin/inventory">
                   <Boxes className="w-4 h-4 mr-1.5" />
                   Inventory
                 </Link>
               </Button>
+              )}
 
-              {isAdmin && (
+              {can('customer_ledger', 'view') && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/admin/customer-ledger">
                     <Wallet className="w-4 h-4 mr-1.5" />
@@ -95,11 +102,11 @@ const Index = () => {
           </div>
 
           {/* Admin Modules */}
-          {isAdmin && (
+          {visibleModules.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Admin Modules</h3>
+              <h3 className="text-lg font-semibold">{isAdmin ? "Admin Modules" : "Modules"}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {adminModules.map((mod) => (
+                {visibleModules.map((mod) => (
                   <Card key={mod.path} className="hover:border-primary/40 transition-colors">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-base">

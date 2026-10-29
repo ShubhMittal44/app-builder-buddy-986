@@ -53,7 +53,9 @@ const OrderWorkspace = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, can } = useAuth();
+  const canEditOrder = can('orders', 'edit');
+  const canAddOrder = can('orders', 'add');
   const { order, loading, error } = useOrder(id);
   const backTo = (location.state as { from?: string } | null)?.from || "/orders";
   const { updateOrder, updateStage, forceCloseOrder } = useOrderMutations();
@@ -378,9 +380,11 @@ const OrderWorkspace = () => {
                   <Link to="/orders">Orders</Link>
                 </Button>
               )}
+              {canAddOrder && (
               <Button asChild>
                 <Link to="/new">Add Order</Link>
               </Button>
+              )}
             </nav>
           </div>
         </div>
@@ -465,7 +469,7 @@ const OrderWorkspace = () => {
               <Card className="sticky top-20 z-10 shadow-lg">
                 <CardContent className="pt-6">
                   <OrderStepper currentStage={order.stage} />
-                  {order.stage !== "closed" && (
+                  {order.stage !== "closed" && canEditOrder && (
                     <div className="mt-6 flex flex-col items-center gap-2">
                       <Button
                         size="lg"
@@ -795,7 +799,7 @@ const OrderWorkspace = () => {
           </Card>
 
           {/* Sticky Save Button */}
-          <div className="sticky bottom-4 flex justify-end">
+          {canEditOrder && <div className="sticky bottom-4 flex justify-end">
             <Button size="lg" onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>
@@ -811,7 +815,7 @@ const OrderWorkspace = () => {
                 </>
               )}
             </Button>
-          </div>
+          </div>}
         </div>
       </main>
 

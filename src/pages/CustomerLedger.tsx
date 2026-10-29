@@ -29,7 +29,9 @@ type BalanceFilter = "all" | "pending" | "settled" | "advance";
 const emptyForm = { customer_name: "", phone: "", address: "", city: "", notes: "" };
 
 const CustomerLedger = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, can } = useAuth();
+  const canAdd = can('customer_ledger', 'add');
+  const canEdit = can('customer_ledger', 'edit');
   const navigate = useNavigate();
   const { customers, loading, totalsByCustomer, grandTotals, createCustomer, updateCustomer, deleteCustomer } = useCustomerLedger();
 
@@ -56,7 +58,7 @@ const CustomerLedger = () => {
     });
   }, [customers, search, balanceFilter, totalsByCustomer]);
 
-  if (!isAdmin) return null;
+  if (!can('customer_ledger', 'view')) return null;
 
   const openAdd = () => { setEditing(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (c: Customer) => {
@@ -134,7 +136,7 @@ const CustomerLedger = () => {
             <Button variant="outline" onClick={() => exportCustomerList(filtered, totalsByCustomer)}>
               <Download className="w-4 h-4 mr-2" />CSV
             </Button>
-            <Button onClick={openAdd}><Plus className="w-4 h-4 mr-2" />Add Customer</Button>
+            {canAdd && <Button onClick={openAdd}><Plus className="w-4 h-4 mr-2" />Add Customer</Button>}
           </div>
         </div>
 
@@ -181,8 +183,8 @@ const CustomerLedger = () => {
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="icon" onClick={() => navigate(`/admin/customer-ledger/${c.id}`)}><Eye className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                            {canEdit && <Button variant="ghost" size="icon" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>}
+                            {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -212,8 +214,8 @@ const CustomerLedger = () => {
                       </div>
                       <div className="flex gap-2 pt-1">
                         <Button size="sm" className="flex-1" onClick={() => navigate(`/admin/customer-ledger/${c.id}`)}><Eye className="w-4 h-4 mr-1" />Ledger</Button>
-                        <Button size="sm" variant="outline" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="sm" variant="outline" onClick={() => setDeleteTarget(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        {canEdit && <Button size="sm" variant="outline" onClick={() => openEdit(c)}><Pencil className="w-4 h-4" /></Button>}
+                        {isAdmin && <Button size="sm" variant="outline" onClick={() => setDeleteTarget(c)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                       </div>
                     </CardContent>
                   </Card>

@@ -34,7 +34,9 @@ type FormMode = "Sale" | "Amount Received" | "OpeningAdjustment";
 
 const CustomerLedgerDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { isAdmin } = useAuth();
+  const { isAdmin, can } = useAuth();
+  const canAdd = can('customer_ledger', 'add');
+  const canEdit = can('customer_ledger', 'edit');
   const { customer, entries, orderNumbers, totals, loading, createEntry, updateEntry, deleteEntry } = useCustomerDetail(id);
 
   // filters
@@ -89,7 +91,7 @@ const CustomerLedgerDetail = () => {
   const hasFilters = !!(fromDate || toDate || typeFilter !== "all" || sourceFilter !== "all");
   const clearFilters = () => { setFromDate(""); setToDate(""); setTypeFilter("all"); setSourceFilter("all"); };
 
-  if (!isAdmin) return null;
+  if (!can('customer_ledger', 'view')) return null;
 
   const openForm = (mode: FormMode) => {
     setEditing(null);
@@ -178,9 +180,9 @@ const CustomerLedgerDetail = () => {
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => openForm("Sale")}><Plus className="w-4 h-4 mr-1" />Add Sale</Button>
-          <Button variant="secondary" onClick={() => openForm("Amount Received")}><Plus className="w-4 h-4 mr-1" />Add Amount Received</Button>
-          <Button variant="secondary" onClick={() => openForm("OpeningAdjustment")}><Plus className="w-4 h-4 mr-1" />Opening / Adjustment</Button>
+          {canAdd && <Button onClick={() => openForm("Sale")}><Plus className="w-4 h-4 mr-1" />Add Sale</Button>}
+          {canAdd && <Button variant="secondary" onClick={() => openForm("Amount Received")}><Plus className="w-4 h-4 mr-1" />Add Amount Received</Button>}
+          {canAdd && <Button variant="secondary" onClick={() => openForm("OpeningAdjustment")}><Plus className="w-4 h-4 mr-1" />Opening / Adjustment</Button>}
           <Button variant="outline" onClick={() => exportCustomerStatement(customer, filtered.map(f => f.entry), orderNumbers)}><Download className="w-4 h-4 mr-1" />CSV</Button>
           <Button variant="outline" onClick={() => printCustomerStatement(customer, filtered.map(f => f.entry), orderNumbers, { from: fromDate, to: toDate })}><FileText className="w-4 h-4 mr-1" />PDF Statement</Button>
         </div>
@@ -255,8 +257,8 @@ const CustomerLedgerDetail = () => {
                       <span className="inline-flex items-center text-xs text-muted-foreground"><Lock className="w-3 h-3 mr-1" />Locked</span>
                     ) : (
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(e)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(e)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                        {canEdit && <Button variant="ghost" size="icon" onClick={() => openEdit(e)}><Pencil className="w-4 h-4" /></Button>}
+                        {isAdmin && <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(e)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                       </div>
                     )}
                   </TableCell>
@@ -296,8 +298,8 @@ const CustomerLedgerDetail = () => {
                     <span className="inline-flex items-center text-xs text-muted-foreground"><Lock className="w-3 h-3 mr-1" />Locked</span>
                   ) : (
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(e)}><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget(e)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      {canEdit && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(e)}><Pencil className="w-4 h-4" /></Button>}
+                      {isAdmin && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteTarget(e)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}
                     </div>
                   )}
                 </div>

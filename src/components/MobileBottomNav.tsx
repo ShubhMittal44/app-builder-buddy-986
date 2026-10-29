@@ -5,14 +5,14 @@ import { cn } from "@/lib/utils";
 
 export const MobileBottomNav = () => {
   const location = useLocation();
-  const { signOut, isAdmin } = useAuth();
+  const { signOut, can } = useAuth();
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
-    { icon: ClipboardList, label: "Orders", path: "/orders" },
-    { icon: Plus, label: "Add", path: "/new" },
-    { icon: Boxes, label: "Stock", path: "/admin/inventory" },
-    ...(isAdmin ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
+    ...(can("orders", "view") ? [{ icon: ClipboardList, label: "Orders", path: "/orders" }] : []),
+    ...(can("orders", "add") ? [{ icon: Plus, label: "Add", path: "/new" }] : []),
+    ...(can("inventory", "view") ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
+    ...(can("customer_ledger", "view") ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
   ];
 
 
@@ -31,10 +31,7 @@ export const MobileBottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      <div className={cn(
-        "grid h-16",
-        isAdmin ? "grid-cols-6" : "grid-cols-5"
-      )}>
+      <div className="grid h-16" style={{ gridTemplateColumns: `repeat(${navItems.length + 1}, minmax(0, 1fr))` }}>
 
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -8,11 +8,19 @@ interface Profile {
   display_name: string | null;
   role: 'admin' | 'manager' | 'staff';
   avatar_url: string | null;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }
 
+export type ModuleKey = 'orders' | 'inventory' | 'daybook' | 'customer_ledger';
+export type PermAction = 'view' | 'add' | 'edit';
+type PermMap = Partial<Record<ModuleKey, { view: boolean; add: boolean; edit: boolean }>>;
+
 interface AuthContextType {
+  permissions: PermMap;
+  can: (module: ModuleKey, action: PermAction) => boolean;
+  refreshPermissions: () => Promise<void>;
   user: User | null;
   session: Session | null;
   profile: Profile | null;
@@ -32,6 +40,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<PermMap>({});
+
+  const fetchPermissions = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('user_module_permissions')
+      .select('module_key, can_view, can_add, can_edit')
+      .eq('user_id', userId);
+    if (error) { console.error('Error fetching permissions:', error); setPermissions({}); return; }
+    const map: PermMap = {};
+    (data ?? []).forEach((r) => {
+      map[r.module_key as ModuleKey] = { view: r.can_view, add: r.can_add, edit: r.can_edit };
+    });
+    setPermissions(map);
+  };
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -42,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) throw error;
+      await fetchPermissions(userId);
       setProfile(data);
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -59,13 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Defer profile fetch to avoid blocking auth state changes
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            fetchProfile(session.user.id).finally(() => setLoading(false));
           }, 0);
         } else {
           setProfile(null);
+          setPermissions({});
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -75,10 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
-      
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -130,7 +153,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' && profile?.is_active !== false;
+  const can = (module: ModuleKey, action: PermAction) =>
+    isAdmin || (profile?.is_active !== false && !!permissions[module]?.[action]);
+  const refreshPermissions = async () => { if (user) await fetchPermissions(user.id); };
+
+  // Pick up admin changes when the user returns to the tab
+  useEffect(() => {
+    if (!user) return;
+    const onFocus = () => { fetchProfile(user.id); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider
@@ -141,6 +175,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         error,
         isAdmin,
+        permissions,
+        can,
+        refreshPermissions,
         signIn,
         signOut,
         resetPassword,
