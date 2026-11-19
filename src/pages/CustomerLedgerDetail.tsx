@@ -25,6 +25,9 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { useCustomerDetail, LedgerEntry, EntryType, signedAmount } from "@/hooks/useCustomerLedger";
 import { exportCustomerStatement } from "@/utils/exportCustomerLedgerCSV";
 import { printCustomerStatement } from "@/utils/customerStatementPdf";
+import { useLedgerSalespersons } from "@/hooks/useLedgerSalespersons";
+import { SalespersonSelect } from "@/components/ledger/SalespersonSelect";
+import { salespersonName } from "@/utils/ledgerSalespersons";
 
 const fmt = (n: number) => "₹" + Math.abs(n).toLocaleString("en-IN");
 const today = () => new Date().toISOString().split("T")[0];
@@ -37,7 +40,9 @@ const CustomerLedgerDetail = () => {
   const { isAdmin, can } = useAuth();
   const canAdd = can('customer_ledger', 'add');
   const canEdit = can('customer_ledger', 'edit');
-  const { customer, entries, orderNumbers, totals, loading, createEntry, updateEntry, deleteEntry } = useCustomerDetail(id);
+  const { customer, entries, orderNumbers, totals, loading, createEntry, updateEntry, deleteEntry, assignSalesperson } = useCustomerDetail(id);
+  const { salespersons, loading: salespersonsLoading } = useLedgerSalespersons();
+  const [assigning, setAssigning] = useState(false);
 
   // filters
   const [fromDate, setFromDate] = useState("");
@@ -163,6 +168,10 @@ const CustomerLedgerDetail = () => {
           <CardContent className="p-5 grid gap-4 md:grid-cols-2">
             <div className="space-y-1">
               <h2 className="text-xl font-bold">{customer.customer_name}</h2>
+              <div className="space-y-1.5 max-w-sm">
+                <Label>Assigned Salesperson</Label>
+                {canEdit ? <SalespersonSelect value={customer.assigned_salesperson_id ?? "unassigned"} currentId={customer.assigned_salesperson_id} salespersons={salespersons} disabled={assigning || salespersonsLoading} onChange={async v => { setAssigning(true); await assignSalesperson(v === "unassigned" ? null : v); setAssigning(false); }} /> : <p className="text-sm text-muted-foreground">{salespersonName(customer.assigned_salesperson_id, salespersons)}</p>}
+              </div>
               {customer.phone && <p className="text-sm text-muted-foreground">📞 {customer.phone}</p>}
               {customer.address && <p className="text-sm text-muted-foreground">📍 {customer.address}</p>}
               {customer.city && <p className="text-sm text-muted-foreground">🏙️ {customer.city}</p>}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { fetchLedgerPages } from '@/utils/fetchLedgerPages';
 
 // ---- Types ----
 export type EntryType = 'Sale' | 'Amount Received' | 'Opening Balance' | 'Adjustment';
@@ -14,6 +15,7 @@ export interface Customer {
   address: string | null;
   city: string | null;
   notes: string | null;
+  assigned_salesperson_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,11 +66,11 @@ export function useCustomerLedger() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [cRes, eRes] = await Promise.all([
-      supabase.from('customers' as any).select('*').order('customer_name'),
-      supabase.from('customer_ledger_entries' as any).select('*'),
+      fetchLedgerPages('customers'),
+      fetchLedgerPages('customer_ledger_entries'),
     ]);
     if (cRes.error) toast({ title: 'Error', description: cRes.error.message, variant: 'destructive' });
-    else setCustomers((cRes.data as any) ?? []);
+    else setCustomers((cRes.data ?? []).sort((a, b) => a.customer_name.localeCompare(b.customer_name)));
     if (eRes.error) toast({ title: 'Error', description: eRes.error.message, variant: 'destructive' });
     else setEntries((eRes.data as any) ?? []);
     setLoading(false);
@@ -95,7 +97,7 @@ export function useCustomerLedger() {
   }, [totalsByCustomer, customers.length]);
 
   // ---- Customer CRUD ----
-  const createCustomer = async (payload: { customer_name: string; phone: string | null; address: string | null; city: string | null; notes: string | null }) => {
+  const createCustomer = async (payload: { customer_name: string; phone: string | null; address: string | null; city: string | null; notes: string | null; assigned_salesperson_id?: string | null }) => {
     const { error } = await supabase.from('customers' as any).insert(payload as any);
     if (error) {
       const msg = error.message.includes('duplicate') ? 'A customer with this name already exists.' : error.message;
@@ -106,8 +108,8 @@ export function useCustomerLedger() {
     await fetchAll(); return true;
   };
 
-  const updateCustomer = async (id: string, payload: { customer_name: string; phone: string | null; address: string | null; city: string | null; notes: string | null }) => {
-    const { error } = await supabase.from('customers' as any).update(payload as any).eq('id', id);
+  const updateCustomer = async (id: string, payload: { customer_name: string; phone: string | null; address: string | null; city: string | null; notes: string | null; assigned_salesperson_id?: string | null }) => {
+    const { error } = await supabase.from('customers' as any).update(payload as any).eq('id', id).select('id').single();
     if (error) {
       const msg = error.message.includes('duplicate') ? 'A customer with this name already exists.' : error.message;
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -142,7 +144,7 @@ export function useCustomerDetail(customerId: string | undefined) {
     setLoading(true);
     const [cRes, eRes] = await Promise.all([
       supabase.from('customers' as any).select('*').eq('id', customerId).maybeSingle(),
-      supabase.from('customer_ledger_entries' as any).select('*').eq('customer_id', customerId),
+      fetchLedgerPages('customer_ledger_entries', customerId),
     ]);
     if (cRes.error) toast({ title: 'Error', description: cRes.error.message, variant: 'destructive' });
     else setCustomer((cRes.data as any) ?? null);
@@ -166,6 +168,15 @@ export function useCustomerDetail(customerId: string | undefined) {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const totals = useMemo(() => computeTotals(entries), [entries]);
+
+  const assignSalesperson = async (assigned_salesperson_id: string | null) => {
+    if (!customerId) return false;
+    const { error } = await supabase.from('customers').update({ assigned_salesperson_id }).eq('id', customerId).select('id').single();
+    if (error) { toast({ title: 'Unable to save assignment', description: error.message, variant: 'destructive' }); return false; }
+    await fetchAll();
+    toast({ title: 'Salesperson assignment saved' });
+    return true;
+  };
 
   const createEntry = async (payload: {
     entry_date: string; entry_type: EntryType; amount: number; payment_mode: string | null; notes: string | null;
@@ -200,5 +211,5 @@ export function useCustomerDetail(customerId: string | undefined) {
     await fetchAll(); return true;
   };
 
-  return { customer, entries, orderNumbers, totals, loading, refetch: fetchAll, createEntry, updateEntry, deleteEntry };
+  return { customer, entries, orderNumbers, totals, loading, refetch: fetchAll, createEntry, updateEntry, deleteEntry, assignSalesperson };
 }

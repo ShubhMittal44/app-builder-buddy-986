@@ -104,6 +104,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          assigned_salesperson_id: string | null
           city: string | null
           created_at: string
           customer_name: string
@@ -115,6 +116,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_salesperson_id?: string | null
           city?: string | null
           created_at?: string
           customer_name: string
@@ -126,6 +128,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_salesperson_id?: string | null
           city?: string | null
           created_at?: string
           customer_name?: string
@@ -135,7 +138,15 @@ export type Database = {
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_assigned_salesperson_id_fkey"
+            columns: ["assigned_salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_salespersons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daybook_entries: {
         Row: {
@@ -417,6 +428,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ledger_salespersons: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       orders: {
         Row: {

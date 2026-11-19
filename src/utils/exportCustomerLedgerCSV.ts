@@ -1,5 +1,6 @@
 import type { Customer, LedgerEntry, CustomerTotals } from '@/hooks/useCustomerLedger';
 import { signedAmount } from '@/hooks/useCustomerLedger';
+import { salespersonName, type LedgerSalesperson } from '@/utils/ledgerSalespersons';
 
 function toCsvRow(values: (string | number | null | undefined)[]): string {
   return values.map(v => {
@@ -23,14 +24,18 @@ function downloadCsv(csv: string, filename: string) {
 const dateStr = () => new Date().toISOString().split('T')[0];
 const safe = (s: string) => s.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
 
-export function exportCustomerList(customers: Customer[], totalsByCustomer: Record<string, CustomerTotals>) {
-  const headers = ['Customer Name', 'Phone', 'City', 'Total Sale', 'Total Received', 'Current Balance', 'Status'];
+export function buildCustomerListCsv(customers: Customer[], totalsByCustomer: Record<string, CustomerTotals>, salespersons: LedgerSalesperson[] = []) {
+  const headers = ['Customer Name', 'Salesperson', 'Phone', 'City', 'Total Sale', 'Total Received', 'Current Balance', 'Status'];
   const rows = customers.map(c => {
     const t = totalsByCustomer[c.id] ?? { totalSale: 0, totalReceived: 0, balance: 0 };
     const status = t.balance > 0 ? 'Pending' : t.balance < 0 ? 'Advance/Extra' : 'Settled';
-    return toCsvRow([c.customer_name, c.phone, c.city, t.totalSale, t.totalReceived, t.balance, status]);
+    return toCsvRow([c.customer_name, salespersonName(c.assigned_salesperson_id, salespersons), c.phone, c.city, t.totalSale, t.totalReceived, t.balance, status]);
   });
-  downloadCsv([headers.join(','), ...rows].join('\n'), `customers_${dateStr()}.csv`);
+  return [headers.join(','), ...rows].join('\n');
+}
+
+export function exportCustomerList(customers: Customer[], totalsByCustomer: Record<string, CustomerTotals>, salespersons: LedgerSalesperson[] = [], filterName = 'All') {
+  downloadCsv(buildCustomerListCsv(customers, totalsByCustomer, salespersons), `Customer_Ledger_${safe(filterName)}_${dateStr()}.csv`);
 }
 
 // Chronological ledger with running balance
