@@ -86,16 +86,6 @@ export function useCustomerLedger() {
     return map;
   }, [customers, entries]);
 
-  const grandTotals = useMemo(() => {
-    let totalSale = 0, totalReceived = 0, outstanding = 0;
-    Object.values(totalsByCustomer).forEach(t => {
-      totalSale += t.totalSale;
-      totalReceived += t.totalReceived;
-      outstanding += t.balance;
-    });
-    return { totalSale, totalReceived, outstanding, totalCustomers: customers.length };
-  }, [totalsByCustomer, customers.length]);
-
   // ---- Customer CRUD ----
   const createCustomer = async (payload: { customer_name: string; phone: string | null; address: string | null; city: string | null; notes: string | null; assigned_salesperson_id?: string | null }) => {
     const { error } = await supabase.from('customers' as any).insert(payload as any);
@@ -127,7 +117,7 @@ export function useCustomerLedger() {
   };
 
   return {
-    customers, entries, loading, totalsByCustomer, grandTotals,
+    customers, entries, loading, totalsByCustomer,
     refetch: fetchAll, createCustomer, updateCustomer, deleteCustomer,
   };
 }

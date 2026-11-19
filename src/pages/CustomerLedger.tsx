@@ -24,7 +24,8 @@ import { exportCustomerList } from "@/utils/exportCustomerLedgerCSV";
 import { useLedgerSalespersons } from "@/hooks/useLedgerSalespersons";
 import { SalespersonSelect } from "@/components/ledger/SalespersonSelect";
 import { ManageSalespersonsDialog } from "@/components/ledger/ManageSalespersonsDialog";
-import { assignedCustomerCounts, filterLedgerCustomers, salespersonName, summarizeCustomers } from "@/utils/ledgerSalespersons";
+import { assignedCustomerCounts, filterLedgerCustomers, salespersonName } from "@/utils/ledgerSalespersons";
+import { useLedgerSummary } from "@/hooks/useLedgerSummary";
 
 const fmt = (n: number) => "₹" + Math.abs(n).toLocaleString("en-IN");
 
@@ -52,7 +53,7 @@ const CustomerLedger = () => {
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
 
   const filtered = useMemo(() => filterLedgerCustomers(customers, totalsByCustomer, search, balanceFilter, salespersonFilter), [customers, search, balanceFilter, salespersonFilter, totalsByCustomer]);
-  const grandTotals = useMemo(() => summarizeCustomers(filtered, totalsByCustomer), [filtered, totalsByCustomer]);
+  const { allowed: canViewSummary, summary: grandTotals } = useLedgerSummary(filtered.map(c => c.id), loading);
 
   if (!can('customer_ledger', 'view')) return null;
 
@@ -104,24 +105,24 @@ const CustomerLedger = () => {
 
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {canViewSummary && <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Card><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><UsersIcon className="w-5 h-5 text-primary" /></div>
-            <div><p className="text-xs text-muted-foreground">Total Customers</p><p className="text-xl font-bold">{grandTotals.totalCustomers}</p></div>
+            <div><p className="text-xs text-muted-foreground">Total Customers</p><p className="text-xl font-bold">{grandTotals?.totalCustomers ?? '…'}</p></div>
           </CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10"><TrendingUp className="w-5 h-5 text-primary" /></div>
-            <div><p className="text-xs text-muted-foreground">Total Sale</p><p className="text-xl font-bold">{fmt(grandTotals.totalSale)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Total Sale</p><p className="text-xl font-bold">{grandTotals ? fmt(grandTotals.totalSale) : '…'}</p></div>
           </CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-accent/10"><TrendingDown className="w-5 h-5 text-accent" /></div>
-            <div><p className="text-xs text-muted-foreground">Total Received</p><p className="text-xl font-bold">{fmt(grandTotals.totalReceived)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Total Received</p><p className="text-xl font-bold">{grandTotals ? fmt(grandTotals.totalReceived) : '…'}</p></div>
           </CardContent></Card>
           <Card><CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-destructive/10"><Wallet className="w-5 h-5 text-destructive" /></div>
-            <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-xl font-bold">{fmt(grandTotals.outstanding)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Outstanding</p><p className="text-xl font-bold">{grandTotals ? fmt(grandTotals.outstanding) : '…'}</p></div>
           </CardContent></Card>
-        </div>
+        </div>}
 
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">

@@ -938,6 +938,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_customer_ledger_summary: {
+        Args: { customer_ids: string[] }
+        Returns: Json
+      }
       has_module_perm: {
         Args: { _action: string; _module: string; _user_id: string }
         Returns: boolean
