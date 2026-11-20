@@ -13,7 +13,7 @@ interface Profile {
   updated_at: string;
 }
 
-export type ModuleKey = 'orders' | 'inventory' | 'daybook' | 'customer_ledger';
+export type ModuleKey = 'orders' | 'inventory' | 'daybook' | 'customer_ledger' | 'income_expenses';
 export type PermAction = 'view' | 'add' | 'edit';
 type PermMap = Partial<Record<ModuleKey, { view: boolean; add: boolean; edit: boolean }>>;
 

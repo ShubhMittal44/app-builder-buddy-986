@@ -301,6 +301,107 @@ export type Database = {
           },
         ]
       }
+      income_expense_audit: {
+        Row: {
+          deleted_at: string
+          deleted_by: string | null
+          id: string
+          previous_values: Json
+          transaction_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          previous_values: Json
+          transaction_id: string
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          previous_values?: Json
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      income_expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      income_expense_transactions: {
+        Row: {
+          amount: number
+          category_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          payment_date: string
+          payment_mode: string | null
+          transaction_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_date: string
+          payment_mode?: string | null
+          transaction_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          payment_date?: string
+          payment_mode?: string | null
+          transaction_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_expense_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "income_expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventory_activity_log: {
         Row: {
           action_type: string
@@ -940,6 +1041,16 @@ export type Database = {
     Functions: {
       admin_customer_ledger_summary: {
         Args: { customer_ids: string[] }
+        Returns: Json
+      }
+      admin_income_expense_summary: {
+        Args: {
+          category_ids?: string[]
+          date_from?: string
+          date_to?: string
+          search_text?: string
+          type_filter?: string
+        }
         Returns: Json
       }
       has_module_perm: {

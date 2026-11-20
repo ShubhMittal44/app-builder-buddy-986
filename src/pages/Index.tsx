@@ -8,6 +8,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 const adminModules = [
+  { title: "Income & Expenses", description: "Income and expense transactions.", icon: Wallet, path: "/income-expenses" },
   {
     title: "Staff Management",
     description: "Manage staff, vehicle, and other expenses.",
@@ -30,7 +31,7 @@ const adminModules = [
 
 const Index = () => {
   const { isAdmin, can, signOut } = useAuth();
-  const visibleModules = adminModules.filter((m) => m.path === '/admin/daybook' ? can('daybook', 'view') : isAdmin);
+  const visibleModules = adminModules.filter((m) => m.path === '/income-expenses' ? can('income_expenses', 'view') : m.path === '/admin/daybook' ? can('daybook', 'view') : isAdmin);
 
 
 

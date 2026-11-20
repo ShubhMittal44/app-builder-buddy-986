@@ -165,7 +165,7 @@ export default function Users() {
     setSavingPerms(true);
     const before = permsByUser[permUser.user_id] ?? emptyPerms();
     const changed = editPerms.filter((r) => {
-      const b = before.find((x) => x.module_key === r.module_key)!;
+      const b = before.find((x) => x.module_key === r.module_key) ?? { can_view: false, can_add: false, can_edit: false };
       return b.can_view !== r.can_view || b.can_add !== r.can_add || b.can_edit !== r.can_edit;
     });
     const { error } = changed.length

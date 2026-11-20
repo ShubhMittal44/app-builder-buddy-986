@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 type Role = 'admin' | 'manager' | 'staff';
-const MODULES = ['orders', 'inventory', 'daybook', 'customer_ledger'] as const;
+const MODULES = ['orders', 'inventory', 'daybook', 'customer_ledger', 'income_expenses'] as const;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

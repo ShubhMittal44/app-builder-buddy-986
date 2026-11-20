@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Plus, LogOut, Boxes, Wallet } from "lucide-react";
+import { Home, ClipboardList, Plus, LogOut, Boxes, Wallet, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ export const MobileBottomNav = () => {
     ...(can("orders", "add") ? [{ icon: Plus, label: "Add", path: "/new" }] : []),
     ...(can("inventory", "view") ? [{ icon: Boxes, label: "Stock", path: "/admin/inventory" }] : []),
     ...(can("customer_ledger", "view") ? [{ icon: Wallet, label: "Ledger", path: "/admin/customer-ledger" }] : []),
+    ...(can("income_expenses", "view") ? [{ icon: ArrowLeftRight, label: "Cash", path: "/income-expenses" }] : []),
   ];
 
 

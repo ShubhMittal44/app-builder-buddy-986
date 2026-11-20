@@ -20,6 +20,7 @@ import CustomerLedger from "./pages/CustomerLedger";
 import CustomerLedgerDetail from "./pages/CustomerLedgerDetail";
 import DayBook from "./pages/DayBook";
 import NotFound from "./pages/NotFound";
+import IncomeExpenses from "./pages/IncomeExpenses";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/admin/customer-ledger" element={<ProtectedRoute module="customer_ledger"><CustomerLedger /></ProtectedRoute>} />
             <Route path="/admin/customer-ledger/:id" element={<ProtectedRoute module="customer_ledger"><CustomerLedgerDetail /></ProtectedRoute>} />
             <Route path="/admin/daybook" element={<ProtectedRoute module="daybook"><DayBook /></ProtectedRoute>} />
+            <Route path="/income-expenses" element={<ProtectedRoute module="income_expenses"><IncomeExpenses /></ProtectedRoute>} />
             
             {/* Admin-only routes */}
             <Route path="/admin/users" element={<ProtectedRoute requireAdmin><Users /></ProtectedRoute>} />

@@ -7,6 +7,7 @@ export const MODULES: { key: ModuleKey; label: string }[] = [
   { key: 'inventory', label: 'Inventory Management' },
   { key: 'daybook', label: 'DayBook' },
   { key: 'customer_ledger', label: 'Customer Ledger' },
+  { key: 'income_expenses', label: 'Income & Expenses' },
 ];
 
 export type PermRow = { module_key: ModuleKey; can_view: boolean; can_add: boolean; can_edit: boolean };
@@ -66,7 +67,7 @@ export function PermissionMatrix({ value, onChange, disabled }: { value: PermRow
           </thead>
           <tbody>
             {MODULES.map((m) => {
-              const r = value.find((x) => x.module_key === m.key)!;
+              const r = value.find((x) => x.module_key === m.key) ?? { module_key: m.key, can_view: false, can_add: false, can_edit: false };
               return (
                 <tr key={m.key} className="border-t">
                   <td className="p-2">{m.label}</td>
