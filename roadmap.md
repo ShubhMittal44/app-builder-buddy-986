@@ -3,7 +3,7 @@
 - [x] Add payment-date persistence, entry/category management, filters, pagination, exports and navigation.
 - [x] Run 28 rule/regression tests; confirm unsigned API exposes no records and desktop/tablet/mobile direct access redirects to login.
 - [ ] Signed-in cash entry/category/export and role checks: blocked by external unmanaged Supabase session access.
-- [ ] Publish Income & Expenses.
+- [ ] Publish Income & Expenses: publishing was declined; the new tables and authorization rules are already applied.
 - [x] Restrict the four ledger summary cards and summary response to Admin; preserve authorized records and exports.
 - [x] Verify with 15 passing rule/calculation tests, an anonymous API rejection, direct-URL login redirect, and successful preview compilation.
 - [ ] Signed-in summary API/UI checks for Admin, Manager and Staff: blocked by external unmanaged Supabase session access; read-query execution cannot impersonate authenticated API roles.
