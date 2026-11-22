@@ -11,4 +11,5 @@
 - [x] Add salesperson master and optional customer reference with existing ledger permissions.
 - [x] Add management, assignments, counts, filtering, and filtered CSV export in Customer Ledger only.
 - [x] Test rules and check public preview; report authenticated verification limitation.
-- [ ] Signed-in assignment, management, and export checks: blocked by external unmanaged Supabase session access.
+- [ ] Signed-in assignment, management, and export checks: blocked by external unmanaged Supabase session access.- [x] Inventory change approval: requests table, Admin-only live writes, atomic approve/reject RPCs, Approvals/My Requests UI, transfer stock, import as per-item requests; 8 rule tests pass.
+- [ ] Signed-in approval checks for Admin/Manager/Staff and database dry-run: dry-run declined; external Supabase blocks signed-in checks.
