@@ -72,6 +72,10 @@ export function ImportInventoryDialog({ open, onOpenChange, inv }: Props) {
       toast({ title: "Inventory import failed. Please check file format.", description: res.error, variant: "destructive" });
       return;
     }
+    if (!inv.isAdmin) {
+      toast({ title: "Request submitted successfully. Inventory will update after Admin approval.", description: `${plan.items.length} import requests sent for review` });
+      reset(); onOpenChange(false); return;
+    }
     const summary = `${res.created} new, ${res.updated} updated, ${res.standsCreated} stands created`;
     if (allWarnings.length > 0) {
       toast({ title: "Inventory imported with warnings. Please review highlighted items.", description: summary });
@@ -221,7 +225,7 @@ export function ImportInventoryDialog({ open, onOpenChange, inv }: Props) {
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
           <Button onClick={commit} disabled={!plan || importing || plan.items.length === 0}>
             {importing && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-            Confirm Import
+            {inv.isAdmin ? "Confirm Import" : "Submit for Approval"}
           </Button>
         </DialogFooter>
       </DialogContent>

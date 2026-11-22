@@ -51,15 +51,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify module permission: Add Stock needs inventory "add", Sale Stock needs inventory "edit"
-    const peek = await req.clone().json().catch(() => ({}));
-    const needed = peek?.action_type === 'sale_stock' ? 'edit' : 'add';
-    const { data: allowed, error: permError } = await supabaseAdmin.rpc('has_module_perm', {
-      _user_id: userData.user.id, _module: 'inventory', _action: needed,
-    });
+    // Live stock changes are Admin-only; Manager/Staff must submit an approval request instead.
+    const { data: allowed, error: permError } = await supabaseAdmin.rpc('is_admin', { _user_id: userData.user.id });
     if (permError || allowed !== true) {
-      console.log('Permission denied (adjust stock):', { permError, needed });
-      return new Response(JSON.stringify({ error: 'You do not have permission for this stock action' }), {
+      return new Response(JSON.stringify({ error: 'Only Admin can change live stock. Please submit the change for Admin approval.' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

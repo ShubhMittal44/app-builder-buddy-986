@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  type ChangeRequestDraft, updateRequest, insertRequest, adjustRequest, transferRequest, breakupRequest, importRequests,
+} from '@/utils/inventoryRequests';
+
+export const REQUEST_SUBMITTED_MSG = 'Request submitted successfully. Inventory will update after Admin approval.';
+
+/** Manager/Staff: store a pending request. Never changes live stock. */
+export async function submitInventoryRequest(d: ChangeRequestDraft): Promise<boolean> {
+  const { error } = await supabase.rpc('submit_inventory_change_request' as any, {
+    p_action_type: d.action_type, p_summary: d.summary, p_operations: d.operations as any,
+    p_changes: d.changes as any, p_original_values: (d.original_values ?? null) as any,
+    p_stock_item_id: d.stock_item_id ?? null, p_stand_id: d.stand_id ?? null,
+  } as any);
+  if (error) { toast({ title: 'Request not submitted', description: error.message, variant: 'destructive' }); return false; }
+  return true;
+}
 
 // ---- Types ----
 export type Unit = 'ft' | 'inch' | 'mm';
@@ -17,7 +34,8 @@ export type ActionType =
   | 'deleted_glass_type'
   | 'add_stock'
   | 'sale_stock'
-  | 'import_inventory';
+  | 'import_inventory'
+  | 'transfer_stock';
 
 
 export interface GlassType {
@@ -108,6 +126,7 @@ async function logActivity(entry: {
 
 // ---- Main inventory hook: loads everything and computes totals ----
 export function useInventory() {
+  const { isAdmin } = useAuth();
   const [glassTypes, setGlassTypes] = useState<GlassType[]>([]);
   const [variants, setVariants] = useState<GlassVariant[]>([]);
   const [stockItems, setStockItems] = useState<GlassStockItem[]>([]);
@@ -206,6 +225,12 @@ export function useInventory() {
 
   // ---- Stand master CRUD (admin only, enforced by RLS) ----
   const createStand = async (payload: { stand_number: string; notes?: string | null }) => {
+    if (!isAdmin) {
+      const ok = await submitInventoryRequest(insertRequest('stands', 'add_stand', `Add stand ${payload.stand_number.trim()}`,
+        { stand_number: payload.stand_number.trim(), notes: payload.notes ?? null }, { action_type: 'created_stand' }));
+      if (ok) toast({ title: 'Submitted for approval', description: REQUEST_SUBMITTED_MSG });
+      return ok;
+    }
     const { error } = await supabase.from('stands' as any).insert({
       stand_number: payload.stand_number.trim(),
       notes: payload.notes ?? null,
@@ -223,6 +248,16 @@ export function useInventory() {
   const updateStand = async (id: string, payload: { stand_number?: string; is_active?: boolean; notes?: string | null }) => {
     const patch: any = { ...payload };
     if (typeof patch.stand_number === 'string') patch.stand_number = patch.stand_number.trim();
+    if (!isAdmin) {
+      const before = stands.find(x => x.id === id);
+      if (!before) return false;
+      const d = updateRequest('stands', 'edit_stand', `Edit stand ${before.stand_number}`, before as any, patch,
+        { stand_number: 'Stand number', is_active: 'Active', notes: 'Notes' }, { action_type: 'updated_stand', stand_id: id, stand_number: before.stand_number });
+      if (!d) { toast({ title: 'No changes to submit' }); return false; }
+      const ok = await submitInventoryRequest(d);
+      if (ok) toast({ title: 'Submitted for approval', description: REQUEST_SUBMITTED_MSG });
+      return ok;
+    }
     const { error } = await supabase.from('stands' as any).update(patch).eq('id', id);
     if (error) {
       console.error('Update stand error:', error);
@@ -265,6 +300,17 @@ export function useInventory() {
     });
     const existing = standQuantities.filter(q => q.inventory_id === inventoryId);
     const keep = new Set(Object.keys(merged));
+    if (!isAdmin) {
+      const it = stockItems.find(i => i.id === inventoryId);
+      const d = breakupRequest(inventoryId, it ? `${it.length}×${it.breadth} ${it.unit}` : 'item',
+        existing.map(e => ({ stand_id: e.stand_id, quantity: Number(e.quantity) })),
+        Object.entries(merged).map(([stand_id, quantity]) => ({ stand_id, quantity })),
+        sid => stands.find(x => x.id === sid)?.stand_number ?? 'Unknown');
+      if (!d) { toast({ title: 'No changes to submit' }); return false; }
+      const ok = await submitInventoryRequest(d);
+      if (ok) toast({ title: 'Submitted for approval', description: REQUEST_SUBMITTED_MSG });
+      return ok;
+    }
 
     try {
       const toDelete = existing.filter(q => !keep.has(q.stand_id)).map(q => q.id);
@@ -295,8 +341,16 @@ export function useInventory() {
   };
 
 
+  const submitted = async (d: ChangeRequestDraft | null) => {
+    if (!d) { toast({ title: 'No changes to submit' }); return false; }
+    const ok = await submitInventoryRequest(d);
+    if (ok) toast({ title: 'Submitted for approval', description: REQUEST_SUBMITTED_MSG });
+    return ok;
+  };
+
   // ---- Glass type CRUD ----
   const createGlassType = async (payload: { glass_type_name: string; notes: string | null }) => {
+    if (!isAdmin) return submitted(insertRequest('glass_types', 'add_glass_type', `Add glass type ${payload.glass_type_name}`, payload, { action_type: 'created_glass_type' }));
     const { data, error } = await supabase.from('glass_types' as any).insert(payload as any).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: (data as any).id, action_type: 'created_glass_type', new_value: payload });
@@ -306,6 +360,8 @@ export function useInventory() {
 
   const updateGlassType = async (id: string, payload: { glass_type_name: string; notes: string | null }) => {
     const before = glassTypes.find(t => t.id === id);
+    if (!isAdmin) return before ? submitted(updateRequest('glass_types', 'edit_glass_type', `Edit glass type ${before.glass_type_name}`, before as any, payload,
+      { glass_type_name: 'Glass type', notes: 'Notes' }, { action_type: 'updated_glass_type', glass_type_id: id })) : false;
     const { error } = await supabase.from('glass_types' as any).update(payload as any).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: id, action_type: 'updated_glass_type', old_value: before, new_value: payload });
@@ -324,6 +380,11 @@ export function useInventory() {
 
   // ---- Variant CRUD ----
   const createVariant = async (payload: { glass_type_id: string; thickness: string; company_purchased: string; color: string | null; notes: string | null }) => {
+    if (!isAdmin) {
+      const tn = glassTypes.find(t => t.id === payload.glass_type_id)?.glass_type_name ?? '';
+      return submitted(insertRequest('glass_variants', 'add_glass_variant', `Add variant ${tn} ${payload.thickness} ${payload.company_purchased}${payload.color ? ' ' + payload.color : ''}`,
+        payload, { action_type: 'created_variant', glass_type_id: payload.glass_type_id }));
+    }
     const { data, error } = await supabase.from('glass_variants' as any).insert(payload as any).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: payload.glass_type_id, glass_variant_id: (data as any).id, action_type: 'created_variant', new_value: payload });
@@ -333,6 +394,9 @@ export function useInventory() {
 
   const updateVariant = async (id: string, payload: { thickness: string; company_purchased: string; color: string | null; notes: string | null }) => {
     const before = variants.find(v => v.id === id);
+    if (!isAdmin) return before ? submitted(updateRequest('glass_variants', 'edit_glass_variant',
+      `Edit variant ${glassTypes.find(t => t.id === before.glass_type_id)?.glass_type_name ?? ''} ${before.thickness} ${before.company_purchased}`, before as any, payload,
+      { thickness: 'Thickness', company_purchased: 'Company', color: 'Colour', notes: 'Notes' }, { action_type: 'updated_variant', glass_type_id: before.glass_type_id, glass_variant_id: id })) : false;
     const { error } = await supabase.from('glass_variants' as any).update(payload as any).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: before?.glass_type_id, glass_variant_id: id, action_type: 'updated_variant', old_value: before, new_value: payload });
@@ -352,6 +416,9 @@ export function useInventory() {
   // ---- Stock item CRUD ----
   const createStockItem = async (payload: { glass_variant_id: string; length: number; breadth: number; unit: Unit; number_of_sheets: number; comment: string | null }) => {
     const variant = variants.find(v => v.id === payload.glass_variant_id);
+    if (!isAdmin) return submitted(insertRequest('glass_stock_items', 'add_stock_item',
+      `Add size ${payload.length}×${payload.breadth} ${payload.unit} (${payload.number_of_sheets} sheets) · ${variant ? `${variant.thickness} ${variant.company_purchased}` : ''}`,
+      payload, { action_type: 'created_stock_item', glass_type_id: variant?.glass_type_id, glass_variant_id: payload.glass_variant_id }));
     const { data, error } = await supabase.from('glass_stock_items' as any).insert(payload as any).select().single();
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: variant?.glass_type_id, glass_variant_id: payload.glass_variant_id, glass_stock_item_id: (data as any).id, action_type: 'created_stock_item', new_value: payload });
@@ -362,6 +429,10 @@ export function useInventory() {
   const updateStockItem = async (id: string, payload: { length: number; breadth: number; unit: Unit; number_of_sheets: number; comment: string | null }) => {
     const before = stockItems.find(i => i.id === id);
     const variant = variants.find(v => v.id === before?.glass_variant_id);
+    if (!isAdmin) return before ? submitted(updateRequest('glass_stock_items', 'edit_stock_item',
+      `Edit size ${before.length}×${before.breadth} ${before.unit} · ${variant ? `${variant.thickness} ${variant.company_purchased}` : ''}`, before as any, payload,
+      { length: 'Length', breadth: 'Breadth', unit: 'Unit', number_of_sheets: 'Total sheets', comment: 'Comment' },
+      { action_type: 'updated_stock_item', glass_type_id: variant?.glass_type_id, glass_variant_id: before.glass_variant_id, glass_stock_item_id: id })) : false;
     const { error } = await supabase.from('glass_stock_items' as any).update(payload as any).eq('id', id);
     if (error) { toast({ title: 'Error', description: error.message, variant: 'destructive' }); return false; }
     await logActivity({ glass_type_id: variant?.glass_type_id, glass_variant_id: before?.glass_variant_id, glass_stock_item_id: id, action_type: 'updated_stock_item', old_value: before, new_value: payload });
@@ -380,7 +451,23 @@ export function useInventory() {
   };
 
   // ---- Stock adjustment (Add Stock / Sale Stock) via secure edge function ----
+  const itemLabel = (itemId: string) => {
+    const it = stockItems.find(i => i.id === itemId);
+    const v = variants.find(x => x.id === it?.glass_variant_id);
+    const t = glassTypes.find(x => x.id === v?.glass_type_id);
+    return it ? `${t?.glass_type_name ?? ''} ${v?.thickness ?? ''} ${v?.company_purchased ?? ''}${v?.color ? ' ' + v.color : ''} ${it.length}×${it.breadth} ${it.unit}`.trim() : 'item';
+  };
+  const standQty = (itemId: string, standId: string) => Number(standQuantities.find(q => q.inventory_id === itemId && q.stand_id === standId)?.quantity ?? 0);
+
   const adjustStock = async (payload: { inventory_id: string; stand_id: string; action_type: 'add_stock' | 'sale_stock'; quantity: number; remarks?: string }) => {
+    if (!isAdmin) {
+      const it = stockItems.find(i => i.id === payload.inventory_id);
+      return submitted(adjustRequest({
+        item_id: payload.inventory_id, stand_id: payload.stand_id, mode: payload.action_type, quantity: payload.quantity, remarks: payload.remarks,
+        label: itemLabel(payload.inventory_id), standLabel: standById[payload.stand_id]?.stand_number ?? '',
+        currentTotal: Number(it?.number_of_sheets ?? 0), currentStand: standQty(payload.inventory_id, payload.stand_id),
+      }));
+    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -416,6 +503,25 @@ export function useInventory() {
     }
   };
 
+  // ---- Stand transfer: Admin applies immediately via the same atomic server path; others submit a request ----
+  const transferStock = async (p: { inventory_id: string; from: string; to: string; quantity: number; remarks?: string }) => {
+    const d = transferRequest({
+      item_id: p.inventory_id, from: p.from, to: p.to, quantity: p.quantity, remarks: p.remarks, label: itemLabel(p.inventory_id),
+      fromLabel: standById[p.from]?.stand_number ?? '', toLabel: standById[p.to]?.stand_number ?? '',
+      fromQty: standQty(p.inventory_id, p.from), toQty: standQty(p.inventory_id, p.to),
+    });
+    if (!isAdmin) return submitted(d);
+    // Admin: submit + approve in one go so the move is atomic and logged once.
+    const { data: id, error } = await supabase.rpc('submit_inventory_change_request' as any, {
+      p_action_type: d.action_type, p_summary: d.summary, p_operations: d.operations as any, p_changes: d.changes as any,
+      p_original_values: null, p_stock_item_id: d.stock_item_id, p_stand_id: d.stand_id,
+    } as any);
+    const res = error ? { error } : await supabase.rpc('review_inventory_change_request' as any, { p_request_id: id, p_decision: 'approve' } as any);
+    if (res.error) { toast({ title: 'Transfer failed', description: res.error.message, variant: 'destructive' }); return false; }
+    toast({ title: 'Stock transferred' });
+    await fetchAll(); return true;
+  };
+
   // ---- Bulk import (admin only, enforced by RLS) ----
   // items come from utils/inventoryImport buildImportPlan()
   const importInventory = async (
@@ -429,6 +535,12 @@ export function useInventory() {
   ): Promise<{ ok: boolean; created: number; updated: number; standsCreated: number; error?: string }> => {
     const norm = (s: string) => (s ?? '').trim().toLowerCase().replace(/\s+/g, '');
     let created = 0, updated = 0, standsCreated = 0;
+    if (!isAdmin) {
+      let sent = 0;
+      for (const d of importRequests(items, opts)) { if (await submitInventoryRequest(d)) sent++; else break; }
+      return { ok: sent === items.length, created: 0, updated: 0, standsCreated: 0, requests: sent,
+        error: sent === items.length ? undefined : `${sent} of ${items.length} requests submitted` } as any;
+    }
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id ?? null;
@@ -577,7 +689,7 @@ export function useInventory() {
     refetch: fetchAll,
     createGlassType, updateGlassType, deleteGlassType,
     createVariant, updateVariant, deleteVariant,
-    createStockItem, updateStockItem, deleteStockItem, adjustStock,
+    createStockItem, updateStockItem, deleteStockItem, adjustStock, transferStock, isAdmin,
     importInventory,
   };
 

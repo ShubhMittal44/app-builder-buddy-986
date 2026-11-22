@@ -405,6 +405,7 @@ export type Database = {
       inventory_activity_log: {
         Row: {
           action_type: string
+          change_request_id: string | null
           changed_at: string
           changed_by: string | null
           comment: string | null
@@ -418,11 +419,13 @@ export type Database = {
           old_value: Json | null
           previous_stand_quantity: number | null
           previous_total_quantity: number | null
+          requested_by: string | null
           stand_id: string | null
           stand_number: string | null
         }
         Insert: {
           action_type: string
+          change_request_id?: string | null
           changed_at?: string
           changed_by?: string | null
           comment?: string | null
@@ -436,11 +439,13 @@ export type Database = {
           old_value?: Json | null
           previous_stand_quantity?: number | null
           previous_total_quantity?: number | null
+          requested_by?: string | null
           stand_id?: string | null
           stand_number?: string | null
         }
         Update: {
           action_type?: string
+          change_request_id?: string | null
           changed_at?: string
           changed_by?: string | null
           comment?: string | null
@@ -454,10 +459,18 @@ export type Database = {
           old_value?: Json | null
           previous_stand_quantity?: number | null
           previous_total_quantity?: number | null
+          requested_by?: string | null
           stand_id?: string | null
           stand_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_activity_log_change_request_id_fkey"
+            columns: ["change_request_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_change_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_activity_log_glass_stock_item_id_fkey"
             columns: ["glass_stock_item_id"]
@@ -484,6 +497,81 @@ export type Database = {
             columns: ["stand_id"]
             isOneToOne: false
             referencedRelation: "stands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_change_requests: {
+        Row: {
+          action_type: string
+          affected_stand_id: string | null
+          affected_stock_item_id: string | null
+          changes: Json
+          created_at: string
+          id: string
+          operations: Json
+          original_values: Json | null
+          rejection_reason: string | null
+          request_number: number
+          requested_by: string
+          requester_role: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          action_type: string
+          affected_stand_id?: string | null
+          affected_stock_item_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          operations: Json
+          original_values?: Json | null
+          rejection_reason?: string | null
+          request_number?: never
+          requested_by: string
+          requester_role: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          action_type?: string
+          affected_stand_id?: string | null
+          affected_stock_item_id?: string | null
+          changes?: Json
+          created_at?: string
+          id?: string
+          operations?: Json
+          original_values?: Json | null
+          rejection_reason?: string | null
+          request_number?: never
+          requested_by?: string
+          requester_role?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_change_requests_affected_stand_id_fkey"
+            columns: ["affected_stand_id"]
+            isOneToOne: false
+            referencedRelation: "stands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_change_requests_affected_stock_item_id_fkey"
+            columns: ["affected_stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "glass_stock_items"
             referencedColumns: ["id"]
           },
         ]
@@ -1039,6 +1127,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _inv_apply: {
+        Args: {
+          req: Database["public"]["Tables"]["inventory_change_requests"]["Row"]
+        }
+        Returns: undefined
+      }
+      _inv_cols: { Args: { tbl: string }; Returns: string[] }
+      _inv_log: {
+        Args: { entry: Json; req_id: string; requester: string }
+        Returns: undefined
+      }
+      _inv_norm: { Args: { v: string }; Returns: string }
+      _inv_required_perms: { Args: { ops: Json }; Returns: string[] }
+      _inv_resolve: { Args: { refs: Json; vals: Json }; Returns: Json }
       admin_customer_ledger_summary: {
         Args: { customer_ids: string[] }
         Returns: Json
@@ -1065,6 +1167,22 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      review_inventory_change_request: {
+        Args: { p_decision: string; p_reason?: string; p_request_id: string }
+        Returns: string
+      }
+      submit_inventory_change_request: {
+        Args: {
+          p_action_type: string
+          p_changes?: Json
+          p_operations: Json
+          p_original_values?: Json
+          p_stand_id?: string
+          p_stock_item_id?: string
+          p_summary: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       order_stage_enum:

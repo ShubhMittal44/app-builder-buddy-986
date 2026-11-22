@@ -20,8 +20,10 @@ import {
 import { exportAllInventory, exportGlassTypeInventory, exportActivityLog } from "@/utils/exportInventoryCSV";
 import { ComboboxInput } from "@/components/ui/combobox-input";
 import { ImportInventoryDialog } from "@/components/inventory/ImportInventoryDialog";
+import { InventoryApprovalsDialog } from "@/components/inventory/InventoryApprovalsDialog";
+import { useInventoryRequests } from "@/hooks/useInventoryRequests";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, FileDown, Search, History, ChevronRight, Layers, Boxes, PackagePlus, PackageMinus, AlertTriangle, Rows3, Upload, ClipboardCheck, ArrowRightLeft } from "lucide-react";
 
 
 const UNITS: Unit[] = ["ft", "inch", "mm"];
@@ -54,6 +56,10 @@ const InventoryManagement = () => {
   const canAddInv = can('inventory', 'add');
   const canEditInv = can('inventory', 'edit');
   const inv = useInventory();
+  const reqs = useInventoryRequests(inv.refetch);
+  const [showApprovals, setShowApprovals] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const saveLabel = isAdmin ? "Save" : "Submit for Approval";
   const {
     glassTypes, variants, stockItems, sheetsByVariant, variantsByType, sheetsByType,
     stands, standById, standQtyByItem, standTotalByItem, standBreakupByVariant, standTotalByVariant,
@@ -277,6 +283,11 @@ const InventoryManagement = () => {
                 <span className="hidden md:inline">Manage Stands</span>
               </Button>
             )}
+            <Button variant={isAdmin && reqs.pendingCount > 0 ? "default" : "outline"} size="sm" onClick={() => setShowApprovals(true)}>
+              <ClipboardCheck className="w-4 h-4 md:mr-1" />
+              <span className="hidden md:inline">{isAdmin ? "Inventory Approvals" : "My Requests"}</span>
+              {isAdmin && reqs.pendingCount > 0 && <Badge variant="secondary" className="ml-1">{reqs.pendingCount}</Badge>}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowActivity(true)}>
               <History className="w-4 h-4 md:mr-1" />
               <span className="hidden md:inline">Activity Log</span>
@@ -340,6 +351,10 @@ const InventoryManagement = () => {
             {canEditInv && <Button variant="secondary" onClick={() => openStockDialog("sale_stock")}>
               <PackageMinus className="w-4 h-4 mr-1" />Sale Stock
             </Button>}
+            {canEditInv && <Button variant="outline" onClick={() => setShowTransfer(true)}>
+              <ArrowRightLeft className="w-4 h-4 mr-1" />Transfer Stock
+            </Button>}
+            {!isAdmin && <span className="text-xs text-muted-foreground">Your changes are sent to Admin for approval before stock updates.</span>}
           </div>
         ) : (
           <Badge variant="secondary">View only — contact an admin to change stock</Badge>
@@ -614,7 +629,7 @@ const InventoryManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTypeDialog(false)}>Cancel</Button>
-            <Button onClick={saveType} disabled={!tName.trim()}>Save</Button>
+            <Button onClick={saveType} disabled={!tName.trim()}>{saveLabel}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -631,7 +646,7 @@ const InventoryManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVariantDialog(false)}>Cancel</Button>
-            <Button onClick={saveVariant} disabled={!vThickness.trim() || !vCompany.trim()}>Save</Button>
+            <Button onClick={saveVariant} disabled={!vThickness.trim() || !vCompany.trim()}>{saveLabel}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -658,7 +673,7 @@ const InventoryManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setItemDialog(false)}>Cancel</Button>
-            <Button onClick={saveItem} disabled={!iLength || !iBreadth}>Save</Button>
+            <Button onClick={saveItem} disabled={!iLength || !iBreadth}>{saveLabel}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -668,6 +683,8 @@ const InventoryManagement = () => {
 
       {/* ====== Add / Sale Stock ====== */}
       <StockAdjustDialog open={stockDialog} onOpenChange={setStockDialog} mode={stockMode} inv={inv} />
+      <TransferStockDialog open={showTransfer} onOpenChange={setShowTransfer} inv={inv} />
+      <InventoryApprovalsDialog open={showApprovals} onOpenChange={setShowApprovals} reqs={reqs} onApplied={inv.refetch} />
 
       {/* ====== Manage Stands ====== */}
       <ManageStandsDialog open={showStands} onOpenChange={setShowStands} inv={inv} />
@@ -735,6 +752,9 @@ const ACTION_LABELS: Record<string, string> = {
   add_stock: "Add Stock",
   sale_stock: "Sale Stock",
   import_inventory: "Inventory Import",
+  transfer_stock: "Transfer Stock",
+  created_stand: "Created stand",
+  updated_stand: "Updated stand",
 };
 
 // Badge styling per action type (positive vs warning for stock movements).
@@ -1063,7 +1083,7 @@ function StandBreakupDialog({ item, onClose, inv }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+          <Button onClick={save} disabled={saving}>{saving ? "Saving…" : (inv.isAdmin ? "Save" : "Submit for Approval")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1192,8 +1212,70 @@ function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={submit} disabled={!canSubmit} className={isAdd ? "bg-accent text-accent-foreground hover:bg-accent/90" : ""}>
-            {submitting ? "Saving…" : (isAdd ? "Add Stock" : "Sale Stock")}
+            {submitting ? "Saving…" : !inv.isAdmin ? "Submit for Approval" : (isAdd ? "Add Stock" : "Sale Stock")}
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ====== Transfer stock between stands ======
+function TransferStockDialog({ open, onOpenChange, inv }: {
+  open: boolean; onOpenChange: (v: boolean) => void; inv: ReturnType<typeof useInventory>;
+}) {
+  const { glassTypes, variants, stockItems, stands, standById, standQtyByItem, transferStock } = inv;
+  const [typeId, setTypeId] = useState(""); const [variantId, setVariantId] = useState(""); const [itemId, setItemId] = useState("");
+  const [from, setFrom] = useState(""); const [to, setTo] = useState(""); const [quantity, setQuantity] = useState(""); const [remarks, setRemarks] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (open) { setTypeId(""); setVariantId(""); setItemId(""); setFrom(""); setTo(""); setQuantity(""); setRemarks(""); setBusy(false); } }, [open]);
+  const rows = itemId ? standQtyByItem[itemId] ?? [] : [];
+  const fromQty = Number(rows.find(r => r.stand_id === from)?.quantity ?? 0);
+  const q = Math.trunc(Number(quantity));
+  const tooMuch = q > fromQty;
+  const ok = !!itemId && !!from && !!to && from !== to && q > 0 && !tooMuch && !busy;
+  const sel = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50";
+  const submit = async () => {
+    if (!ok) return; setBusy(true);
+    const done = await transferStock({ inventory_id: itemId, from, to, quantity: q, remarks: remarks.trim() || undefined });
+    setBusy(false); if (done) onOpenChange(false);
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Transfer Stock Between Stands</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <div><Label>Glass Type *</Label>
+            <select className={sel} value={typeId} onChange={e => { setTypeId(e.target.value); setVariantId(""); setItemId(""); setFrom(""); }}>
+              <option value="">Select glass type</option>{glassTypes.map(t => <option key={t.id} value={t.id}>{t.glass_type_name}</option>)}
+            </select></div>
+          <div><Label>Thickness / Company / Color *</Label>
+            <select className={sel} value={variantId} disabled={!typeId} onChange={e => { setVariantId(e.target.value); setItemId(""); setFrom(""); }}>
+              <option value="">Select variant</option>{variants.filter(v => v.glass_type_id === typeId).map(v => <option key={v.id} value={v.id}>{variantLabel(v)}</option>)}
+            </select></div>
+          <div><Label>Size / Dimension *</Label>
+            <select className={sel} value={itemId} disabled={!variantId} onChange={e => { setItemId(e.target.value); setFrom(""); }}>
+              <option value="">Select size</option>{stockItems.filter(i => i.glass_variant_id === variantId).map(i => <option key={i.id} value={i.id}>{i.length}×{i.breadth} {i.unit} — {i.number_of_sheets} sheets</option>)}
+            </select></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>From Stand *</Label>
+              <select className={sel} value={from} disabled={!itemId} onChange={e => setFrom(e.target.value)}>
+                <option value="">Select</option>{rows.filter(r => Number(r.quantity) > 0).map(r => <option key={r.stand_id} value={r.stand_id}>{standById[r.stand_id]?.stand_number ?? "?"} — {r.quantity}</option>)}
+              </select></div>
+            <div><Label>To Stand *</Label>
+              <select className={sel} value={to} disabled={!itemId} onChange={e => setTo(e.target.value)}>
+                <option value="">Select</option>{stands.filter(s => s.is_active && s.id !== from).map(s => <option key={s.id} value={s.id}>{s.stand_number}</option>)}
+              </select></div>
+          </div>
+          <div><Label>Sheets to Transfer *</Label>
+            <Input type="number" min={1} inputMode="numeric" value={quantity} onChange={e => setQuantity(e.target.value)} />
+            {tooMuch && <p className="text-destructive text-xs mt-1">Only {fromQty} sheets available in the selected stand.</p>}
+          </div>
+          <div><Label>Remarks</Label><Textarea value={remarks} onChange={e => setRemarks(e.target.value)} placeholder="Optional notes" /></div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={submit} disabled={!ok}>{busy ? "Saving…" : inv.isAdmin ? "Transfer" : "Submit for Approval"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
