@@ -44,3 +44,12 @@ describe('inventory approval requests', () => {
     expect(rs.flatMap(r => r.operations.map(o => o.op))).not.toContain('delete');
   });
 });
+
+import { requestRemarks } from './inventoryRequests';
+test('sale remark is shown exactly as typed', () => {
+  const ops = [{ op: 'adjust', item_id: 'i', stand_id: 's', delta: -5, remarks: 'Sold on 20 November 2026 – Site delivery' }];
+  expect(requestRemarks(ops)).toBe('Sold on 20 November 2026 – Site delivery');
+});
+test('missing remark returns null', () => {
+  expect(requestRemarks([{ op: 'adjust', item_id: 'i', stand_id: 's', delta: -5, remarks: null }])).toBeNull();
+});

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Check, X, Eye, Loader2 } from "lucide-react";
+import { requestRemarks } from "@/utils/inventoryRequests";
 import type { InventoryChangeRequest, useInventoryRequests } from "@/hooks/useInventoryRequests";
 
 export const REQUEST_ACTION_LABELS: Record<string, string> = {
@@ -145,6 +146,12 @@ export function InventoryApprovalsDialog({ open, onOpenChange, reqs, onApplied }
                 </TableRow>
               ))}</TableBody>
             </Table>
+            {["add_stock", "sale_stock", "transfer_stock"].includes(detail.action_type) && (
+              <div className="text-sm rounded-md border p-2">
+                <span className="text-muted-foreground font-medium">Remark:</span>{" "}
+                <span className="whitespace-pre-wrap break-words">{requestRemarks(detail.operations) ?? "No remark provided"}</span>
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">Current values are as of submission; approval rechecks the latest stock and blocks the change if it no longer fits.</p>
             {conflict && <p className="text-sm text-destructive rounded-md border border-destructive/40 p-2">{conflict}</p>}
             {isAdmin && detail.status === "pending" && rejecting && (

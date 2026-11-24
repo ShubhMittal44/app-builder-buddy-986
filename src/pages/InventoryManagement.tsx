@@ -1140,7 +1140,7 @@ function StockAdjustDialog({ open, onOpenChange, mode, inv }: {
       stand_id: standId,
       action_type: mode,
       quantity: Math.trunc(qtyNum),
-      remarks: remarks.trim() || undefined,
+      remarks: remarks.trim() ? remarks : undefined,
     });
     setSubmitting(false);
     if (ok) onOpenChange(false);

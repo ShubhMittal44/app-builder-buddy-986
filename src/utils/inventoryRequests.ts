@@ -153,3 +153,12 @@ export function importRequests(items: ImportItem[], opts: { createMissingStands:
     };
   });
 }
+
+/** Remarks typed by the requester for stock movements (sale/add/transfer), exactly as stored. */
+export function requestRemarks(operations: unknown): string | null {
+  if (!Array.isArray(operations)) return null;
+  const r = operations
+    .filter((o: any) => (o?.op === 'adjust' || o?.op === 'transfer') && typeof o.remarks === 'string' && o.remarks.trim() !== '')
+    .map((o: any) => o.remarks as string);
+  return r.length ? r.join('\n') : null;
+}
